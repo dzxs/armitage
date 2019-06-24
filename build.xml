@@ -19,7 +19,7 @@
 			source="11"
 			includeantruntime="fuckno"
 		>
-		       <classpath path="./lib/jgraphx.jar;./lib/sleep.jar;./lib/msgpack-core-0.8.17.jar;./lib/postgresql-9.1-901.jdbc4.jar;./lib/javassist-3.25.0-GA.jar" />
+		       <classpath path="./lib/jgraphx.jar;./lib/sleep.jar;./lib/msgpack-core-0.8.17.jar;./lib/postgresql-42.2.6.jar;./lib/javassist-3.25.0-GA.jar" />
 		</javac>
 	</target>
 
@@ -27,7 +27,7 @@
 		<unzip src="lib/sleep.jar" dest="bin" />
 		<unzip src="lib/jgraphx.jar" dest="bin" />
 		<unzip src="lib/msgpack-core-0.8.17.jar" dest="bin" />
-		<unzip src="lib/postgresql-9.1-901.jdbc4.jar" dest="bin" />
+		<unzip src="lib/postgresql-42.2.6.jar" dest="bin" />
 		<unzip src="lib/javassist-3.25.0-GA.jar" dest="bin" />
                 <copy todir="bin/scripts">
                         <fileset dir="scripts" />
