@@ -1,7 +1,8 @@
 package msf;
 
-import org.msgpack.MessagePack;
-import org.msgpack.type.*;
+import org.msgpack.core.MessagePack;
+import org.msgpack.core.MessagePacker;
+import org.msgpack.value.*;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -24,7 +25,6 @@ public class MsgRpcImpl extends RpcConnectionImpl {
 	private URL u;
 	private URLConnection huc; // new for each call
 	protected int timeout = 0; /* scriptjunkie likes timeouts, I don't. :) */
-	protected MessagePack packer = new MessagePack();
 
 	/**
 	 * Creates a new URL to use as the basis of a connection.
@@ -79,7 +79,7 @@ public class MsgRpcImpl extends RpcConnectionImpl {
 	private static Object unMsg(Object src){
 		Object out = src;
 		if (src instanceof ArrayValue) {
-			List l = (ArrayValue)src;
+			ArrayValue l = (ArrayValue)src;
 			List outList = new ArrayList(l.size());
 			out = outList;
 			for(Object o : l)
@@ -89,15 +89,15 @@ public class MsgRpcImpl extends RpcConnectionImpl {
 			out = ((BooleanValue)src).getBoolean();
 		}
 		else if (src instanceof FloatValue) {
-			out = ((FloatValue)src).getFloat();
+			out = ((FloatValue)src).asFloatValue();
 		}
 		else if (src instanceof IntegerValue) {
 			try {
-				out = ((IntegerValue)src).getInt();
+				out = ((IntegerValue)src).asInt();
 			}
 			catch (Exception ex) {
 				/* this is a bandaid until I have a chance to further examine what's happening */
-				out = ((IntegerValue)src).getLong();
+				out = ((IntegerValue)src).asLong();
 			}
 		}
 		else if (src instanceof MapValue) {
@@ -109,7 +109,7 @@ public class MsgRpcImpl extends RpcConnectionImpl {
 				Object val = ent.getValue();
 				// Hack - keep bytes of generated or encoded payload
 				if(ents.size() == 1 && val instanceof RawValue && (key.equals("payload") || key.equals("encoded")))
-					val = ((RawValue)val).getByteArray();
+					val = ((RawValue)val).asByteArray();
 				else
 					val = unMsg(val);
 				((Map)out).put(key + "", val);
@@ -124,7 +124,7 @@ public class MsgRpcImpl extends RpcConnectionImpl {
 			out = null;
 		}
 		else if (src instanceof RawValue) {
-			out = ((RawValue)src).getString();
+			out = ((RawValue)src).asString();
 		}
 		return out;
 	}
@@ -143,14 +143,24 @@ public class MsgRpcImpl extends RpcConnectionImpl {
 		temp.add(methodName);
         Collections.addAll(temp, args);
 
-		packer.write(os, temp);
+        List<Value> values = new ArrayList<>();
+		for (Object b : temp) {
+			if (b instanceof String){
+				values.add(ValueFactory.newString((String) b));
+			} else {
+				System.out.println("Fixme: Unimplemented " + b.getClass());
+			}
+		}
+		MessagePacker packer = MessagePack.newDefaultPacker(os).packValue(ValueFactory.newArray(values));
+		packer.flush();
+		packer.close();
 		os.close();
 	}
 
 	/** Receives an RPC response and converts to an object */
 	protected Object readResp() throws Exception {
 		InputStream is = huc.getInputStream();
-		Value mpo = packer.read(is);
+		Value mpo = MessagePack.newDefaultUnpacker(is).unpackValue();
 		return unMsg(mpo);
 	}
 }
