@@ -144,12 +144,8 @@ public class MsgRpcImpl extends RpcConnectionImpl {
         Collections.addAll(temp, args);
 
         List<Value> values = new ArrayList<>();
-		for (Object b : temp) {
-			if (b instanceof String){
-				values.add(ValueFactory.newString((String) b));
-			} else {
-				System.out.println("Fixme: Unimplemented " + b.getClass());
-			}
+		for (Object unknown : temp) {
+			values.add(craftValue(unknown));
 		}
 		MessagePacker packer = MessagePack.newDefaultPacker(os).packValue(ValueFactory.newArray(values));
 		packer.flush();
@@ -162,5 +158,25 @@ public class MsgRpcImpl extends RpcConnectionImpl {
 		InputStream is = huc.getInputStream();
 		Value mpo = MessagePack.newDefaultUnpacker(is).unpackValue();
 		return unMsg(mpo);
+	}
+
+	private static Value craftValue(Object o){
+		if (o instanceof String){
+			return ValueFactory.newString((String) o);
+		} else if (o instanceof Map){
+			Map<Object, Object> objectMap = (Map<Object, Object>) o;
+			Map<Value, Value> converted = new HashMap<>();
+			for (Object key : objectMap.keySet()) {
+				Value a = craftValue(key);
+				Value b = craftValue(objectMap.get(key));
+				if (a != null && b != null){
+					converted.put(a, b);
+				}
+			}
+			return ValueFactory.newMap(converted);
+		} else  {
+			System.out.println("Fixme: Unimplemented " + o.getClass());
+			return null;
+		}
 	}
 }
