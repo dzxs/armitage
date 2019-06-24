@@ -1,12 +1,17 @@
 package armitage;
 
 import console.Console;
-import msf.*;
-import java.util.*;
-import java.util.regex.*;
-import java.awt.*;
-import java.awt.event.*;
+import msf.RpcAsync;
+import msf.RpcConnection;
+
 import javax.swing.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.net.SocketException;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /* A generic class to manage reading/writing to a console. Keeps the code simpler (although the Sleep code to do this is 
    simpler than this Java code. *sigh* */
@@ -53,16 +58,14 @@ public class ConsoleClient implements Runnable, ActionListener {
 	}
 
 	public void fireSessionReadEvent(String text) {
-		Iterator i = listeners.iterator();
-		while (i.hasNext()) {
-			((ConsoleCallback)i.next()).sessionRead(session, text);
+		for (Object listener : listeners) {
+			((ConsoleCallback) listener).sessionRead(session, text);
 		}
 	}
 
 	public void fireSessionWroteEvent(String text) {
-		Iterator i = listeners.iterator();
-		while (i.hasNext()) {
-			((ConsoleCallback)i.next()).sessionWrote(session, text);
+		for (Object listener : listeners) {
+			((ConsoleCallback) listener).sessionWrote(session, text);
 		}
 	}
 
@@ -102,9 +105,9 @@ public class ConsoleClient implements Runnable, ActionListener {
 		kill();
 	}
 
-	protected void finalize() {
+	/*protected void finalize() {
 		actionPerformed(null);
-	}
+	}*/
 
 	private static final Pattern interact = Pattern.compile("sessions -i (\\d+)\n");
 
@@ -149,23 +152,21 @@ public class ConsoleClient implements Runnable, ActionListener {
 	protected void setupListener() {
 		synchronized (this) {
 			if (window != null) {
-				window.getInput().addActionListener(new ActionListener() {
-					public void actionPerformed(ActionEvent ev) {
-						final String text = window.getInput().getText() + "\n";
-						window.getInput().setText("");
-						sendString(text);
-					}
+				window.getInput().addActionListener(ev -> {
+					final String text = window.getInput().getText() + "\n";
+					window.getInput().setText("");
+					sendString(text);
 				});
 			}
 		}
 	}
 
 	public static String cleanText(String text) {
-		StringBuffer string = new StringBuffer(text.length());
-		char chars[] = text.toCharArray();
-		for (int x = 0; x < chars.length; x++) {
-			if (chars[x] != 1 && chars[x] != 2)
-				string.append(chars[x]);
+		StringBuilder string = new StringBuilder(text.length());
+		char[] chars = text.toCharArray();
+		for (char aChar : chars) {
+			if (aChar != 1 && aChar != 2)
+				string.append(aChar);
 		}
 
 		return string.toString();
@@ -175,15 +176,12 @@ public class ConsoleClient implements Runnable, ActionListener {
 		try {
 			return (Map)(connection.execute(readCommand, new Object[] { session }));
 		}
-		catch (java.net.SocketException sex) {
+		catch (SocketException | NullPointerException sex) {
 			/* this definitely means we were disconnected */
 			return null;
 		}
-		catch (NullPointerException nex) {
-			/* this probably means we were disconnected, which means it's a good time
+		/* this probably means we were disconnected, which means it's a good time
 			   to quietly kill this thread */
-			return null;
-		}
 	}
 
 	private long lastRead = 0L;

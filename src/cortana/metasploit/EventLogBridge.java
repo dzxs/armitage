@@ -1,17 +1,18 @@
 package cortana.metasploit;
 
-import cortana.core.*;
-import msf.*;
-import armitage.*;
+import armitage.ConsoleCallback;
+import armitage.ConsoleClient;
+import cortana.core.EventManager;
+import cortana.core.FilterManager;
+import msf.RpcConnection;
+import sleep.bridges.BridgeUtilities;
+import sleep.interfaces.Function;
+import sleep.interfaces.Loadable;
+import sleep.runtime.Scalar;
+import sleep.runtime.ScriptInstance;
+import sleep.runtime.SleepUtils;
 
-import sleep.bridges.*;
-import sleep.interfaces.*;
-import sleep.runtime.*;
-import sleep.engine.*;
-
-import java.util.*;
-
-import java.io.IOException;
+import java.util.Stack;
 
 /* add an API for interfacing with the event log... */
 public class EventLogBridge implements Loadable, Function, ConsoleCallback {
@@ -25,11 +26,11 @@ public class EventLogBridge implements Loadable, Function, ConsoleCallback {
         public void sessionRead(String sessionid, String text) {
 		String[] lines = text.trim().split("\n");
 
-		for (int x = 0; x < lines.length; x++) {
-			Stack args = new Stack();
-			args.push(SleepUtils.getScalar(lines[x]));
-			events.fireEvent("event_read", args);
-		}
+            for (String line : lines) {
+                Stack args = new Stack();
+                args.push(SleepUtils.getScalar(line));
+                events.fireEvent("event_read", args);
+            }
 	}
 
         public void sessionWrote(String sessionid, String text) {

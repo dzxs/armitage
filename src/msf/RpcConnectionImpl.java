@@ -1,16 +1,10 @@
 package msf;
 
-import java.io.*;
-import java.net.*;
-import java.text.*;
-import java.util.*;
-import javax.xml.*;
-import javax.xml.parsers.*;
-import javax.xml.transform.*;
-import javax.xml.transform.dom.*;
-import javax.xml.transform.stream.*;
-import org.w3c.dom.*;
 import armitage.ArmitageBuffer;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * This is a modification of msfgui/RpcConnection.java by scriptjunkie. Taken from 
@@ -50,11 +44,6 @@ public abstract class RpcConnectionImpl implements RpcConnection, Async {
 
 	/** Constructor sets up a connection and authenticates. */
 	public RpcConnectionImpl(String username, String password, String host, int port, boolean secure, boolean debugf) {
-	}
-
-	/** Destructor cleans up. */
-	protected void finalize() throws Throwable {
-		super.finalize();
 	}
 
 	/** Method that sends a call to the server and received a response; only allows one at a time */
@@ -138,81 +127,72 @@ public abstract class RpcConnectionImpl implements RpcConnection, Async {
 	public Object execute(String methodName, Object[] params) throws IOException {
 		if (database != null && "db.".equals(methodName.substring(0, 3))) {
 			return database.execute(methodName, params);
-		}
-		else if (methodName.equals("armitage.ping")) {
-			try {
-				long time = System.currentTimeMillis() - Long.parseLong(params[0] + "");
+		} else if (hooks.containsKey(methodName)) {
+            RpcConnection con = (RpcConnection)hooks.get(methodName);
+            return con.execute(methodName, params);
+        }
+        switch (methodName) {
+            case "armitage.ping":
+                try {
+                    long time = System.currentTimeMillis() - Long.parseLong(params[0] + "");
 
-				HashMap res = new HashMap();
-				res.put("result", time + "");
-				return res;
-			}
-			catch (Exception ex) {
-				HashMap res = new HashMap();
-				res.put("result", "0");
-				return res;
-			}
-		}
-		else if (methodName.equals("armitage.my_ip")) {
-			HashMap res = new HashMap();
-			res.put("result", address);
-			return res;
-		}
-		else if (methodName.equals("armitage.set_ip")) {
-			address = params[0] + "";
-			return new HashMap();
-		}
-		else if (methodName.equals("armitage.lock")) {
-			if (locks.containsKey(params[0] + "")) {
-				Map res = new HashMap();
-				res.put("error", "session already locked\n" + locks.get(params[0] + ""));
-				return res;
-			}
-			else {
-				locks.put(params[0] + "", params[1]);
-			}
-			return new HashMap();
-		}
-		else if (methodName.equals("armitage.unlock")) {
-			locks.remove(params[0] + "");
-			return new HashMap();
-		}
-		else if (methodName.equals("armitage.publish")) {
-			ArmitageBuffer buffer = getABuffer(params[0] + "");
-			buffer.put(params[1] + "");
-			return new HashMap();
-		}
-		else if (methodName.equals("armitage.query")) {
-			ArmitageBuffer buffer = getABuffer(params[0] + "");
-			String data = (String)buffer.get(params[1] + "");
-			HashMap temp = new HashMap();
-			temp.put("data", data);
-			return temp;
-		}
-		else if (methodName.equals("armitage.reset")) {
-			ArmitageBuffer buffer = getABuffer(params[0] + "");
-			buffer.reset();
-			return new HashMap();
-		}
-		else if (methodName.equals("armitage.sleep")) {
-			try {
-				Thread.sleep(Integer.parseInt(params[0] + ""));
-			}
-			catch (Exception ex) {
-			}
-			return new HashMap();
-		}
-		else if (hooks.containsKey(methodName)) {
-			RpcConnection con = (RpcConnection)hooks.get(methodName);
-			return con.execute(methodName, params);
-		}
-		else {
-			Object[] paramsNew = new Object[params.length+1];
-			paramsNew[0] = rpcToken;
-			System.arraycopy(params, 0, paramsNew, 1, params.length);
-			Object result = cacheExecute(methodName, paramsNew);
-			return result;
-		}
+                    HashMap res = new HashMap();
+                    res.put("result", time + "");
+                    return res;
+                } catch (Exception ex) {
+                    HashMap res = new HashMap();
+                    res.put("result", "0");
+                    return res;
+                }
+            case "armitage.my_ip":
+                HashMap res = new HashMap();
+                res.put("result", address);
+                return res;
+            case "armitage.set_ip":
+                address = params[0] + "";
+                return new HashMap();
+            case "armitage.lock":
+                if (locks.containsKey(params[0] + "")) {
+                    Map ress = new HashMap();
+                    ress.put("error", "session already locked\n" + locks.get(params[0] + ""));
+                    return ress;
+                } else {
+                    locks.put(params[0] + "", params[1]);
+                }
+                return new HashMap();
+            case "armitage.unlock":
+                locks.remove(params[0] + "");
+                return new HashMap();
+            case "armitage.publish": {
+                ArmitageBuffer buffer = getABuffer(params[0] + "");
+                buffer.put(params[1] + "");
+                return new HashMap();
+            }
+            case "armitage.query": {
+                ArmitageBuffer buffer = getABuffer(params[0] + "");
+                String data = (String) buffer.get(params[1] + "");
+                HashMap temp = new HashMap();
+                temp.put("data", data);
+                return temp;
+            }
+            case "armitage.reset": {
+                ArmitageBuffer buffer = getABuffer(params[0] + "");
+                buffer.reset();
+                return new HashMap();
+            }
+            case "armitage.sleep":
+                try {
+                    Thread.sleep(Integer.parseInt(params[0] + ""));
+                } catch (Exception ignored) {
+                }
+                return new HashMap();
+            default:
+                Object[] paramsNew = new Object[params.length + 1];
+                paramsNew[0] = rpcToken;
+                System.arraycopy(params, 0, paramsNew, 1, params.length);
+                Object result = cacheExecute(methodName, paramsNew);
+                return result;
+        }
 	}
 
 	/** Caches certain calls and checks cache for re-executing them.

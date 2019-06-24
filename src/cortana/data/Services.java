@@ -1,22 +1,11 @@
 package cortana.data;
 
-import cortana.core.*;
-
-import armitage.ArmitageTimerClient;
-import armitage.ArmitageTimer;
-
-import graph.Route;
-
-import sleep.bridges.*;
-import sleep.interfaces.*;
-import sleep.runtime.*;
-import sleep.engine.*;
+import cortana.core.EventManager;
+import cortana.core.FilterManager;
+import msf.RpcConnection;
+import sleep.runtime.Scalar;
 
 import java.util.*;
-
-import java.io.IOException;
-
-import msf.*;
 
 public class Services extends ManagedData {
 	protected RpcConnection  client;
@@ -69,28 +58,26 @@ public class Services extends ManagedData {
 		Set newServices = new HashSet();
 
 		/* clear all of the services */
-		Iterator j = hosts.getHosts().values().iterator();
-		while (j.hasNext()) {
-			Host host = (Host)j.next();
-			oldServices.addAll(host.serviceSet());
-			host.getServices().clear();
-		}
+        for (Object o : hosts.getHosts().values()) {
+            Host host = (Host) o;
+            oldServices.addAll(host.serviceSet());
+            host.getServices().clear();
+        }
 
 		/* install all the services into our hosts data */
 		services = (List)results.get("services");
-		Iterator i = services.iterator();
-		while (i.hasNext()) {
-			Map data = (Map)i.next();
-			String host = data.get("host") + "";
-			String port = data.get("port") + "";
+        for (Object service : services) {
+            Map data = (Map) service;
+            String host = data.get("host") + "";
+            String port = data.get("port") + "";
 
-			Host temp = (Host)hosts.getHosts().get(host);
-			if (temp != null) {
-				Map srvc = temp.getServices();
-				srvc.put(port, data);
-				newServices.add(new Service(host, port));
-			}
-		}
+            Host temp = (Host) hosts.getHosts().get(host);
+            if (temp != null) {
+                Map srvc = temp.getServices();
+                srvc.put(port, data);
+                newServices.add(new Service(host, port));
+            }
+        }
 
 		/* fire a message for various services that we now see */
 		if (!initial) {

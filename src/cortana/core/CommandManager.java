@@ -1,12 +1,14 @@
 package cortana.core;
 
+import sleep.bridges.SleepClosure;
+import sleep.interfaces.Loadable;
+import sleep.runtime.Scalar;
+import sleep.runtime.SleepUtils;
+
 import java.util.*;
-import sleep.runtime.*;
-import sleep.bridges.*;
-import sleep.interfaces.*;
 
 public class CommandManager {
-	protected Map commands;
+	protected Map<String, SleepClosure> commands;
 
 	protected SleepClosure getCommand(String name) {
 		if (commands.containsKey(name)) {
@@ -23,7 +25,7 @@ public class CommandManager {
 	/* a function to help out with tab completion */
 	public List commandList(String filter) {
 		Iterator i = commands.entrySet().iterator();
-		List res  = new LinkedList();
+		List<String> res  = new LinkedList<>();
 		while (i.hasNext()) {
 			Map.Entry temp = (Map.Entry)i.next();
 			String command = temp.getKey() + "";
@@ -45,7 +47,7 @@ public class CommandManager {
 	}
 
 	public CommandManager() {
-		commands = new HashMap();
+		commands = new HashMap<>();
 	}
 
 	public void registerCommand(String command, SleepClosure c) {
@@ -53,7 +55,7 @@ public class CommandManager {
 	}
 
 	public boolean fireCommand(String command, String args) {
-		Stack tokens = new Stack();
+		Stack<Scalar> tokens = new Stack<>();
 		StringBuffer token = new StringBuffer();
 		for (int x = 0; x < args.length(); x++) {
 			char temp = args.charAt(x);

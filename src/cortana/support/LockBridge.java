@@ -1,15 +1,19 @@
 package cortana.support;
 
-import cortana.core.*;
-import cortana.*;
+import cortana.core.EventManager;
+import msf.Async;
+import msf.RpcConnection;
+import sleep.bridges.BridgeUtilities;
+import sleep.interfaces.Function;
+import sleep.interfaces.Loadable;
+import sleep.runtime.Scalar;
+import sleep.runtime.ScriptInstance;
+import sleep.runtime.SleepUtils;
 
-import java.util.*;
-
-import sleep.runtime.*;
-import sleep.interfaces.*;
-import sleep.bridges.*;
-
-import msf.*;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Stack;
 
 public class LockBridge implements Function, Loadable, Runnable {
 	protected EventManager  events;
@@ -52,7 +56,7 @@ public class LockBridge implements Function, Loadable, Runnable {
 			if (!temp.containsKey("error"))
 				return true;
 		}
-		catch (Exception ex) {
+		catch (Exception ignored) {
 		}
 		return false;
 	}
@@ -61,7 +65,7 @@ public class LockBridge implements Function, Loadable, Runnable {
 		try {
 			((Async)connection).execute_async("armitage.unlock", new Object[] { name });
 		}
-		catch (Exception ex) {
+		catch (Exception ignored) {
 		}
 	}
 
@@ -80,19 +84,17 @@ public class LockBridge implements Function, Loadable, Runnable {
 					List tempr = new LinkedList();
 
 					/* loop through our locks (in order) and try to acquire them and release them */
-					Iterator i = templ.iterator();
-					while (i.hasNext()) {
-						LockMinion m = (LockMinion)i.next();
-						if (m.grab())
-							tempr.add(m);
-						Thread.sleep(100);
-					}
+                    for (Object o : templ) {
+                        LockMinion m = (LockMinion) o;
+                        if (m.grab())
+                            tempr.add(m);
+                        Thread.sleep(100);
+                    }
 
 					/* now, take any locks that were successful and remove them from oust list */
 					synchronized (this) {
-						i = tempr.iterator();
-						while (i.hasNext()) {
-							locks.remove(i.next());
+						for (Object o : tempr) {
+							locks.remove(o);
 						}
 					}
 

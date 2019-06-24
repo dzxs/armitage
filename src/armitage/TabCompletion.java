@@ -1,13 +1,11 @@
 package armitage;
 
 import console.Console;
-import msf.*;
-import java.util.*;
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
+import msf.RpcConnection;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Map;
 
 /* A generic class to manage reading/writing to a console. Keeps the code simpler (although the Sleep code to do this is 
    simpler than this Java code. *sigh* */

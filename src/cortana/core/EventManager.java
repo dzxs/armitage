@@ -1,9 +1,11 @@
 package cortana.core;
 
+import sleep.bridges.SleepClosure;
+import sleep.interfaces.Loadable;
+import sleep.runtime.ScriptInstance;
+import sleep.runtime.SleepUtils;
+
 import java.util.*;
-import sleep.runtime.*;
-import sleep.bridges.*;
-import sleep.interfaces.*;
 
 public class EventManager {
 	protected Map listeners;
@@ -52,10 +54,9 @@ public class EventManager {
 
 	public static Stack shallowCopy(Stack args) {
 		Stack copy = new Stack();
-		Iterator i = args.iterator();
-		while (i.hasNext()) {
-			copy.push(i.next());
-		}
+        for (Object arg : args) {
+            copy.push(arg);
+        }
 		return copy;
 	}
 

@@ -1,22 +1,17 @@
 package ssl;
 
-import java.net.*;
+import armitage.ArmitageMain;
+import sleep.bridges.io.IOObject;
+
+import javax.net.ServerSocketFactory;
+import javax.net.ssl.SSLServerSocketFactory;
 import java.io.*;
-import javax.net.ssl.*;
-import javax.net.*;
-
-import java.security.*;
-import java.security.cert.*;
-
-import sleep.bridges.io.*;
-
-/* internal package... I don't like it, but need it to generate a self-signed cert */
-import sun.security.x509.*;
-
-import java.math.*;
-import java.util.*;
-
-import armitage.*;
+import java.math.BigInteger;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.security.KeyStore;
+import java.security.MessageDigest;
+import java.util.Enumeration;
 
 /* taken from jIRCii, I developed it, so I get to do what I want ;) */
 public class SecureServerSocket {
@@ -62,7 +57,7 @@ public class SecureServerSocket {
 		}
 
 		/* read in the actual password */
-		StringBuffer mypass = new StringBuffer();
+		StringBuilder mypass = new StringBuilder();
 		for (int x = 0; x < length; x++) {
 			mypass.append((char)authin.readUnsignedByte());
 		}
@@ -100,7 +95,7 @@ public class SecureServerSocket {
 				try {
 					client.close();
 				}
-				catch (Exception ex) {
+				catch (Exception ignored) {
 				}
 				return null;
 			}
@@ -148,7 +143,7 @@ public class SecureServerSocket {
 			}
 		}
 		catch (Exception ex) {
-			System.err.println(ex);
+			//System.err.println(ex); why?
 			ex.printStackTrace();
 		}
 		return "unknown";

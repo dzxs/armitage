@@ -1,16 +1,13 @@
 package console;
 
 import javax.swing.*;
-import javax.swing.event.*;
-import javax.swing.border.*;
-import javax.swing.text.*;
-
+import javax.swing.border.EmptyBorder;
+import javax.swing.text.DefaultCaret;
+import javax.swing.text.JTextComponent;
 import java.awt.*;
-import java.awt.event.*;
-
-import java.io.PrintStream;
-
-import java.util.*;
+import java.awt.event.ActionEvent;
+import java.util.LinkedList;
+import java.util.Properties;
 
 /** A generic multi-feature console for use in the Armitage network attack tool */
 public class Display extends JPanel {
@@ -27,28 +24,26 @@ public class Display extends JPanel {
 		Color foreground = Color.decode(display.getProperty("console.foreground.color", "#ffffff"));
 		Color background = Color.decode(display.getProperty("console.background.color", "#000000"));
 
-		Iterator i = components.iterator();
-		while (i.hasNext()) {
-			JComponent component = (JComponent)i.next();
-                        if (component == console)
-                                component.setOpaque(false);
-                        else
-                                component.setBackground(background);
-			component.setForeground(foreground);
-			component.setFont(consoleFont);
+        for (Object o : components) {
+            JComponent component = (JComponent) o;
+            if (component == console)
+                component.setOpaque(false);
+            else
+                component.setBackground(background);
+            component.setForeground(foreground);
+            component.setFont(consoleFont);
 
-			if (component == console) {
-				component.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 0));
-			}
-			else {
-				component.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
-			}
+            if (component == console) {
+                component.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 0));
+            } else {
+                component.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+            }
 
-			if (component instanceof JTextComponent) {
-				JTextComponent tcomponent = (JTextComponent)component;
-				tcomponent.setCaretColor(foreground.brighter());
-			}
-		}
+            if (component instanceof JTextComponent) {
+                JTextComponent tcomponent = (JTextComponent) component;
+                tcomponent.setCaretColor(foreground.brighter());
+            }
+        }
 	}
 
 	public void append(final String text) {
@@ -56,11 +51,7 @@ public class Display extends JPanel {
 			_append(text);
 		}
 		else {
-			SwingUtilities.invokeLater(new Runnable() {
-				public void run() {
-					_append(text);
-				}
-			});
+			SwingUtilities.invokeLater(() -> _append(text));
 		}
 	}
 
@@ -75,11 +66,7 @@ public class Display extends JPanel {
 			console.setText(_text);
 		}
 		else {
-			SwingUtilities.invokeLater(new Runnable() {
-				public void run() {
-					console.setText(_text);
-				}
-			});
+			SwingUtilities.invokeLater(() -> console.setText(_text));
 		}
 	}
 
@@ -169,12 +156,10 @@ public class Display extends JPanel {
 				JButton goaway = new JButton("X ");
 				SearchPanel.removeBorderFromButton(goaway);
 
-				goaway.addActionListener(new ActionListener() {
-					public void actionPerformed(ActionEvent ev) {
-						myConsole.remove(north);
-						myConsole.validate();
-						search.clear();
-					}
+				goaway.addActionListener(ev1 -> {
+					myConsole.remove(north);
+					myConsole.validate();
+					search.clear();
 				});
 				
 				north.setLayout(new BorderLayout());

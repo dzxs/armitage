@@ -1,5 +1,5 @@
 package ssl;
 
 public interface ArmitageTrustListener {
-	public boolean trust(String fingerprint);
+	boolean trust(String fingerprint);
 }

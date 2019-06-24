@@ -1,22 +1,12 @@
 package cortana.data;
 
-import cortana.core.*;
-
-import armitage.ArmitageTimerClient;
-import armitage.ArmitageTimer;
-
-import graph.Route;
-
-import sleep.bridges.*;
-import sleep.interfaces.*;
-import sleep.runtime.*;
-import sleep.engine.*;
+import cortana.core.EventManager;
+import cortana.core.FilterManager;
+import msf.RpcConnection;
+import sleep.runtime.Scalar;
+import sleep.runtime.SleepUtils;
 
 import java.util.*;
-
-import java.io.IOException;
-
-import msf.*;
 
 public class Hosts extends ManagedData {
 	protected RpcConnection  client;
@@ -26,11 +16,10 @@ public class Hosts extends ManagedData {
 	public Map getHostsData() {
 		Map r = new HashMap();
 
-		Iterator i = hosts.entrySet().iterator();
-		while (i.hasNext()) {
-			Map.Entry temp = (Map.Entry)i.next();
-			r.put(temp.getKey(), ((Host)temp.getValue()).getData());
-		}
+        for (Object o : hosts.entrySet()) {
+            Map.Entry temp = (Map.Entry) o;
+            r.put(temp.getKey(), ((Host) temp.getValue()).getData());
+        }
 
 		return r;
 	}
@@ -67,29 +56,26 @@ public class Hosts extends ManagedData {
 		/* invalidate the cache */
 		cache = null;
 
-		Set currentHosts = new HashSet();
-		currentHosts.addAll(hosts.keySet());
+        Set currentHosts = new HashSet(hosts.keySet());
 
 		Map  newHosts = new HashMap();
 
 		List hostl = (List)results.get("hosts");
-		Iterator i = hostl.iterator();
 
-		while (i.hasNext()) {
-			Map data = (Map)i.next();
-			String address = data.get("address") + "";
+        for (Object o : hostl) {
+            Map data = (Map) o;
+            String address = data.get("address") + "";
 
-			Host temp;
-			if (hosts.containsKey(address)) {
-				temp = (Host)hosts.get(address);
-				temp.update(data);
-			}
-			else {
-				temp = new Host(address, data);
-			}
+            Host temp;
+            if (hosts.containsKey(address)) {
+                temp = (Host) hosts.get(address);
+                temp.update(data);
+            } else {
+                temp = new Host(address, data);
+            }
 
-			newHosts.put(address, temp);
-		}
+            newHosts.put(address, temp);
+        }
 
 		/* set the hosts info to the old host info */
 		hosts = newHosts;

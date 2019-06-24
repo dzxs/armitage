@@ -1,17 +1,10 @@
 package ssl;
 
-import java.net.*;
-import java.io.*;
-import javax.net.ssl.*;
-import javax.net.*;
-import java.util.*;
-
-import java.security.*;
-import java.security.cert.*;
-
-import java.math.*;
-
-import javax.swing.*;
+import javax.net.ssl.X509TrustManager;
+import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 
 public class ArmitageTrustManager implements X509TrustManager {
 	protected ArmitageTrustListener checker;
@@ -20,23 +13,23 @@ public class ArmitageTrustManager implements X509TrustManager {
 		this.checker = checker;
 	}
 
-	public void checkClientTrusted(X509Certificate ax509certificate[], String authType) {
+	public void checkClientTrusted(X509Certificate[] ax509certificate, String authType) {
 		return;
 	}
 
-	public void checkServerTrusted(X509Certificate ax509certificate[], String authType) throws CertificateException {
+	public void checkServerTrusted(X509Certificate[] ax509certificate, String authType) throws CertificateException {
 		try {
-			for (int x = 0; x < ax509certificate.length; x++) {
-				byte[] bytesOfMessage = ax509certificate[x].getEncoded();
-				MessageDigest md = MessageDigest.getInstance("SHA1");
-				byte[] thedigest = md.digest(bytesOfMessage);
+            for (X509Certificate x509Certificate : ax509certificate) {
+                byte[] bytesOfMessage = x509Certificate.getEncoded();
+                MessageDigest md = MessageDigest.getInstance("SHA1");
+                byte[] thedigest = md.digest(bytesOfMessage);
 
-				BigInteger bi = new BigInteger(1, thedigest);
-				String fingerprint = bi.toString(16);
+                BigInteger bi = new BigInteger(1, thedigest);
+                String fingerprint = bi.toString(16);
 
-				if (checker != null && !checker.trust(fingerprint))
-					throw new CertificateException("Certificate Rejected. Press Cancel.");
-			}
+                if (checker != null && !checker.trust(fingerprint))
+                    throw new CertificateException("Certificate Rejected. Press Cancel.");
+            }
 
 			return;
 		}

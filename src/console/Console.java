@@ -1,19 +1,14 @@
 package console;
 
 import javax.swing.*;
-import javax.swing.event.*;
-import javax.swing.border.*;
-import javax.swing.text.*;
-
+import javax.swing.border.EmptyBorder;
+import javax.swing.text.DefaultCaret;
+import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.*;
-
 import java.io.PrintStream;
-
 import java.util.*;
-import java.util.regex.*;
-
-import armitage.Activity;
+import java.util.regex.Pattern;
 
 /** A generic multi-feature console for use in the Armitage network attack tool */
 public class Console extends JPanel implements FocusListener {
@@ -106,7 +101,7 @@ public class Console extends JPanel implements FocusListener {
 		}
 
 		public String resolveWord(Point pt) {
-			int position = console.viewToModel(pt);
+			int position = console.viewToModel2D(pt);
 			String data  = console.getText().replace("\n", " ").replaceAll("\\s", " ");
 
 			int start = data.lastIndexOf(" ", position);
@@ -142,9 +137,8 @@ public class Console extends JPanel implements FocusListener {
 		Color foreground = Color.decode(display.getProperty("console.foreground.color", "#ffffff"));
 		Color background = Color.decode(display.getProperty("console.background.color", "#000000"));
 
-		Iterator i = components.iterator();
-		while (i.hasNext()) {
-			JComponent component = (JComponent)i.next();
+		for (Object o : components) {
+			JComponent component = (JComponent) o;
 			component.setForeground(foreground);
 			if (component == console || component == prompt)
 				component.setOpaque(false);
@@ -154,13 +148,12 @@ public class Console extends JPanel implements FocusListener {
 
 			if (component == console || component == prompt) {
 				component.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 0));
-			}
-			else {
+			} else {
 				component.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
 			}
 
 			if (component instanceof JTextComponent) {
-				JTextComponent tcomponent = (JTextComponent)component;
+				JTextComponent tcomponent = (JTextComponent) component;
 				tcomponent.setCaretColor(foreground.brighter());
 			}
 		}
@@ -190,11 +183,9 @@ public class Console extends JPanel implements FocusListener {
 			setPrompt(_prompt);
 		}
 		else {
-			SwingUtilities.invokeLater(new Runnable() {
-				public void run() {
-					if (!promptLock)
-						setPrompt(_prompt);
-				}
+			SwingUtilities.invokeLater(() -> {
+				if (!promptLock)
+					setPrompt(_prompt);
 			});
 		}
 	}
@@ -210,10 +201,10 @@ public class Console extends JPanel implements FocusListener {
 	}
 
 	public void setStyle(String text) {
-		String lines[] = text.trim().split("\n");
+		String[] lines = text.trim().split("\n");
 		colorme = new Replacements[lines.length];
 		for (int x = 0; x < lines.length; x++) {
-			String ab[] = lines[x].split("\\t+");
+			String[] ab = lines[x].split("\\t+");
 			if (ab.length == 2) {
 				ab[1] = ab[1].replace("\\c", Colors.color + "");
 				ab[1] = ab[1].replace("\\o", Colors.cancel + "");
@@ -226,20 +217,20 @@ public class Console extends JPanel implements FocusListener {
 		}
 	}
 
-	protected Replacements colorme[] = null;
+	protected Replacements[] colorme = null;
 
 	protected String fixText(String text) {
 		if (colorme == null)
 			return text;
 
-		StringBuffer result = new StringBuffer();
+		StringBuilder result = new StringBuilder();
 		String[] lines = text.split("(?<=\\n)");
 
-		for (int x = 0; x < lines.length; x++) {
-			String temp = lines[x];
-			for (int y = 0; y < colorme.length; y++) {
-				if (colorme[y] != null)
-					temp = colorme[y].original.matcher(temp).replaceFirst(colorme[y].replacer);
+		for (String line : lines) {
+			String temp = line;
+			for (Replacements replacements : colorme) {
+				if (replacements != null)
+					temp = replacements.original.matcher(temp).replaceFirst(replacements.replacer);
 			}
 			result.append(temp);
 		}
@@ -290,11 +281,7 @@ public class Console extends JPanel implements FocusListener {
 			appendToConsole(_text);
 		}
 		else {
-			SwingUtilities.invokeLater(new Runnable() {
-				public void run() {
-					appendToConsole(_text);
-				}
-			});
+			SwingUtilities.invokeLater(() -> appendToConsole(_text));
 		}
 	}
 
@@ -304,11 +291,7 @@ public class Console extends JPanel implements FocusListener {
 			console.setText("");
 		}
 		else {
-			SwingUtilities.invokeLater(new Runnable() {
-				public void run() {
-					console.setText("");
-				}
-			});
+			SwingUtilities.invokeLater(() -> console.setText(""));
 		}
 	}
 
@@ -321,11 +304,9 @@ public class Console extends JPanel implements FocusListener {
 			validate();
 		}
 		else {
-			SwingUtilities.invokeLater(new Runnable() {
-				public void run() {
-					remove(bottom);
-					validate();
-				}
+			SwingUtilities.invokeLater(() -> {
+				remove(bottom);
+				validate();
 			});
 		}
 	}
@@ -473,35 +454,15 @@ public class Console extends JPanel implements FocusListener {
 		menu.add(paste);
 		menu.add(clear);
 		
-		cut.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent ev) {
-				_component.cut();
-			}
-		});
+		cut.addActionListener(ev -> _component.cut());
 
-		copy.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent ev) {
-				_component.copy();
-			}
-		});
+		copy.addActionListener(ev -> _component.copy());
 
-		cut.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent ev) {
-				_component.cut();
-			}
-		});
+		cut.addActionListener(ev -> _component.cut());
 
-		paste.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent ev) {
-				input.paste();
-			}
-		});
+		paste.addActionListener(ev -> input.paste());
 
-		clear.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent ev) {
-				_component.setText("");
-			}
-		});
+		clear.addActionListener(ev -> _component.setText(""));
 
 		return menu;
 	}
@@ -520,12 +481,10 @@ public class Console extends JPanel implements FocusListener {
 				JButton goaway = new JButton("X ");
 				SearchPanel.removeBorderFromButton(goaway);
 
-				goaway.addActionListener(new ActionListener() {
-					public void actionPerformed(ActionEvent ev) {
-						myConsole.remove(north);
-						myConsole.validate();
-						search.clear();
-					}
+				goaway.addActionListener(ev1 -> {
+					myConsole.remove(north);
+					myConsole.validate();
+					search.clear();
 				});
 				
 				north.setLayout(new BorderLayout());
@@ -593,11 +552,9 @@ public class Console extends JPanel implements FocusListener {
 
 	/* handle the keyboard history stuff */
 	private void setupHistoryFeature() {
-		input.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent ev) {
-				if (!"".equals(ev.getActionCommand()))
-					history.add(ev.getActionCommand());
-			}
+		input.addActionListener(ev -> {
+			if (!"".equals(ev.getActionCommand()))
+				history.add(ev.getActionCommand());
 		});
 
 		addActionForKeySetting("console.history_previous.shortcut", "UP", new AbstractAction() {
@@ -649,7 +606,7 @@ public class Console extends JPanel implements FocusListener {
 		if (!ev.isTemporary() && ev.getComponent() == console) {
 			/* this is a work-around for Windows where the user can't highlight
 			   text because of this attempt to get focus back to the input area */
-			if ((System.getProperty("os.name") + "").indexOf("Windows") == -1 && (System.getProperty("os.name") + "").indexOf("Mac") == -1)
+			if (!(System.getProperty("os.name") + "").contains("Windows") && !(System.getProperty("os.name") + "").contains("Mac"))
 				input.requestFocusInWindow();
 		}
 	}

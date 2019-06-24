@@ -1,11 +1,12 @@
 package armitage;
 
 import console.Console;
-import msf.*;
-import java.util.*;
-import java.awt.*;
-import java.awt.event.*;
+
 import javax.swing.*;
+import java.awt.event.ActionEvent;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 
 /* A generic class to manage reading/writing to a console. Keeps the code simpler (although the Sleep code to do this is 
    simpler than this Java code. *sigh* */
@@ -50,29 +51,27 @@ public abstract class GenericTabCompletion {
 			/* cycle through all of our options, we want to split items up to the
 			   first slash. We also want them to be unique and ordered (hence the
 			   linked hash set */
-			Iterator i = options.iterator();
-			while (i.hasNext()) {
-				String option = i.next() + "";
+            for (Object o : options) {
+                String option = o + "";
 
-				String begin;
-				String end;
+                String begin;
+                String end;
 
-				if (text.length() > option.length()) {
-					begin = option;
-					end = "";
-				}
-				else {
-					begin = option.substring(0, text.length());
-					end = option.substring(text.length());
-				}
+                if (text.length() > option.length()) {
+                    begin = option;
+                    end = "";
+                } else {
+                    begin = option.substring(0, text.length());
+                    end = option.substring(text.length());
+                }
 
-				int nextSlash;
-				if ((nextSlash = end.indexOf('/')) > -1 && (nextSlash + 1) < end.length()) {
-					end = end.substring(0, nextSlash);
-				}
+                int nextSlash;
+                if ((nextSlash = end.indexOf('/')) > -1 && (nextSlash + 1) < end.length()) {
+                    end = end.substring(0, nextSlash);
+                }
 
-				responses.add(begin + end);
-			}
+                responses.add(begin + end);
+            }
 
 			responses.add(text);
 
@@ -81,11 +80,7 @@ public abstract class GenericTabCompletion {
 				last = (String)tabs.next();
 			}
 
-			SwingUtilities.invokeLater(new Runnable() {
-				public void run() {
-					window.getInput().setText(last);
-				}
-			});
+			SwingUtilities.invokeLater(() -> window.getInput().setText(last));
 		}
 		catch (Exception ex) {
 			ex.printStackTrace();
@@ -104,11 +99,7 @@ public abstract class GenericTabCompletion {
 				return;
 			}
 			else {
-				new Thread(new Runnable() {
-					public void run() {
-						tabCompleteFirst(text);
-					}
-				}).start();
+				new Thread(() -> tabCompleteFirst(text)).start();
 			}
 		}
 	}

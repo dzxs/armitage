@@ -1,18 +1,18 @@
 package armitage;
 
-import javax.swing.*;
-import javax.swing.event.*;
-import java.awt.image.*;
+import cortana.gui.MenuBuilder;
+import ui.*;
 
+import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-
-import java.util.*;
-
-import cortana.gui.MenuBuilder;
-import java.io.*;
-
-import ui.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Stack;
 
 public class ArmitageApplication extends JComponent {
 	protected JTabbedPane tabs = null;
@@ -91,11 +91,7 @@ public class ArmitageApplication extends JComponent {
 			_removeTab(tab);
 		}
 		else {
-			SwingUtilities.invokeLater(new Runnable() {
-				public void run() {
-					_removeTab(tab);
-				}
-			});
+			SwingUtilities.invokeLater(() -> _removeTab(tab));
 		}
 	}
 
@@ -104,11 +100,7 @@ public class ArmitageApplication extends JComponent {
 			_setTop(top);
 		}
 		else {
-			SwingUtilities.invokeLater(new Runnable() {
-				public void run() {
-					_setTop(top);
-				}
-			});
+			SwingUtilities.invokeLater(() -> _setTop(top));
 		}
 	}
 
@@ -137,11 +129,7 @@ public class ArmitageApplication extends JComponent {
 			_addTab(title, tab, removeListener, null);
 		}
 		else {
-			SwingUtilities.invokeLater(new Runnable() {
-				public void run() {
-					_addTab(title, tab, removeListener, null);
-				}
-			});
+			SwingUtilities.invokeLater(() -> _addTab(title, tab, removeListener, null));
 		}
 	}
 
@@ -150,11 +138,7 @@ public class ArmitageApplication extends JComponent {
 			_addTab(title, tab, removeListener, tooltip);
 		}
 		else {
-			SwingUtilities.invokeLater(new Runnable() {
-				public void run() {
-					_addTab(title, tab, removeListener, tooltip);
-				}
-			});
+			SwingUtilities.invokeLater(() -> _addTab(title, tab, removeListener, tooltip));
 		}
 	}
 
@@ -168,7 +152,7 @@ public class ArmitageApplication extends JComponent {
 		}
 	}
 
-	protected LinkedList apptabs = new LinkedList();
+	protected LinkedList<ApplicationTab> apptabs = new LinkedList<>();
 
 	public void closeActiveTab() {
 		JComponent tab = (JComponent)tabs.getSelectedComponent();
@@ -208,13 +192,12 @@ public class ArmitageApplication extends JComponent {
 
 	public void snapActiveTab() {
 		JComponent tab = (JComponent)tabs.getSelectedComponent();
-		Iterator i = apptabs.iterator();
-		while (i.hasNext()) {
-			ApplicationTab t = (ApplicationTab)i.next();
-			if (t.component == tab) {
-				snapAppTab(t.title, tab);
-			}
-		}
+        for (Object apptab : apptabs) {
+            ApplicationTab t = (ApplicationTab) apptab;
+            if (t.component == tab) {
+                snapAppTab(t.title, tab);
+            }
+        }
 	}
 
 	public void addAppTab(String title, JComponent component, ActionListener removeListener) {
@@ -227,11 +210,7 @@ public class ArmitageApplication extends JComponent {
 
 	public void disconnected() {
 		JButton close = new JButton("Close");
-		close.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent ev) {
-				window.quit();
-			}
-		});
+		close.addActionListener(ev -> window.quit());
 
 		JPanel announce = new JPanel();
 		announce.setLayout(new BorderLayout());
@@ -261,7 +240,7 @@ public class ArmitageApplication extends JComponent {
 
 			myicon = javax.imageio.ImageIO.read(i);
 		}
-		catch (Exception ex) {
+		catch (Exception ignored) {
 		}
 
 		return myicon;
@@ -398,40 +377,22 @@ public class ArmitageApplication extends JComponent {
 					JPopupMenu menu = new JPopupMenu();
 
 					JMenuItem a = new JMenuItem("Open in window", 'O');
-					a.addActionListener(new ActionListener() {
-						public void actionPerformed(ActionEvent ev) {
-							popAppTab(component);
-						}
-					});
+					a.addActionListener(ev15 -> popAppTab(component));
 
 					JMenuItem b = new JMenuItem("Close like tabs", 'C');
-					b.addActionListener(new ActionListener() {
-						public void actionPerformed(ActionEvent ev) {
-							removeAppTab(null, title, ev);
-						}
-					});
+					b.addActionListener(ev14 -> removeAppTab(null, title, ev14));
 
 					JMenuItem c = new JMenuItem("Save screenshot", 'S');
-					c.addActionListener(new ActionListener() {
-						public void actionPerformed(ActionEvent ev) {
-							snapAppTab(title, tab);
-						}
-					});
+					c.addActionListener(ev13 -> snapAppTab(title, tab));
 
 					JMenuItem dd = new JMenuItem("Send to bottom", 'b');
-					dd.addActionListener(new ActionListener() {
-						public void actionPerformed(ActionEvent ev) {
-							dockAppTab(component);
-						}
-					});
+					dd.addActionListener(ev12 -> dockAppTab(component));
 
 					JMenuItem d = new JMenuItem("Rename Tab", 'R');
-					d.addActionListener(new ActionListener() {
-						public void actionPerformed(ActionEvent ev) {
-							String text = JOptionPane.showInputDialog("Rename tab to:", (label.getText() + "").trim());
-							if (text != null)
-								label.setText(text + "   ");
-						}
+					d.addActionListener(ev1 -> {
+						String text = JOptionPane.showInputDialog("Rename tab to:", (label.getText() + "").trim());
+						if (text != null)
+							label.setText(text + "   ");
 					});
 
 					menu.add(a);
@@ -459,19 +420,17 @@ public class ArmitageApplication extends JComponent {
 			}
 		});
 
-		close.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent ev) {
-				if  ((ev.getModifiers() & ActionEvent.CTRL_MASK) == ActionEvent.CTRL_MASK) {
-					popAppTab(component);
-				}
-				else if  ((ev.getModifiers() & ActionEvent.SHIFT_MASK) == ActionEvent.SHIFT_MASK) {
-					removeAppTab(null, title, ev);
-				}
-				else {
-					removeAppTab(component, null, ev);
-				}
-				System.gc();
+		close.addActionListener(ev -> {
+			if  ((ev.getModifiers() & ActionEvent.CTRL_MASK) == ActionEvent.CTRL_MASK) {
+				popAppTab(component);
 			}
+			else if  ((ev.getModifiers() & ActionEvent.SHIFT_MASK) == ActionEvent.SHIFT_MASK) {
+				removeAppTab(null, title, ev);
+			}
+			else {
+				removeAppTab(component, null, ev);
+			}
+			System.gc();
 		});
 
 		component.addComponentListener(new ComponentAdapter() {

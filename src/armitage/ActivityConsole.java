@@ -1,18 +1,10 @@
 package armitage;
 
+import console.Console;
+
 import javax.swing.*;
-import javax.swing.event.*;
-import javax.swing.border.*;
-import javax.swing.text.*;
-
 import java.awt.*;
-import java.awt.event.*;
-
-import java.io.PrintStream;
-
-import java.util.*;
-
-import console.*;
+import java.util.Properties;
 
 /** A generic multi-feature console for use in the Armitage network attack tool */
 public class ActivityConsole extends Console implements Activity {

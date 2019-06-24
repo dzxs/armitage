@@ -1,7 +1,9 @@
 package tree;
 
 import javax.swing.*;
-import javax.swing.tree.*;
+import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreeModel;
+import javax.swing.tree.TreeNode;
 import java.util.*;
 
 /** implements a TreeNode that:
@@ -44,18 +46,13 @@ public class SimpleTreeNode implements TreeNode {
 			_add(node);
 		}
 		else {
-			SwingUtilities.invokeLater(new Runnable() {
-				public void run() {
-					_add(node);
-				}
-			});
+			SwingUtilities.invokeLater(() -> _add(node));
 		}
 	}
 
 	public TreeNode findChild(Object o) {
-		Iterator i = children.iterator();
-		while (i.hasNext()) {
-			SimpleTreeNode node = (SimpleTreeNode)i.next();
+		for (Object child : children) {
+			SimpleTreeNode node = (SimpleTreeNode) child;
 			if (o.equals(node.getData()))
 				return node;
 		}
@@ -78,21 +75,12 @@ public class SimpleTreeNode implements TreeNode {
 			_reset();
 		}
 		else {
-			SwingUtilities.invokeLater(new Runnable() {
-				public void run() {
-					_reset();
-				}
-			});
+			SwingUtilities.invokeLater(this::_reset);
 		}
 	}
 
 	public void _reset() {
-		Iterator i = children.iterator();
-		while (i.hasNext()) {
-			Object node = i.next();
-			if (!marked.contains(node))
-				i.remove();
-		}
+		children.removeIf(node -> !marked.contains(node));
 
 		if (model instanceof DefaultTreeModel)
 			((DefaultTreeModel)model).nodeStructureChanged(this);

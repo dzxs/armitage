@@ -1,19 +1,14 @@
 package cortana.gui;
 
+import armitage.GenericTabCompletion;
 import console.Console;
-import msf.*;
-import armitage.*;
-import java.util.*;
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
 
-import java.io.IOException;
+import java.util.Collection;
 
 /* scriptable tab completion... */
 public class CortanaTabCompletion extends GenericTabCompletion {
-	public static interface Completer {
-		public Collection getOptions(String text);
+	public interface Completer {
+		Collection getOptions(String text);
 	}
 
 	protected Completer completer;

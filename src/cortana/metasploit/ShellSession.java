@@ -1,12 +1,12 @@
 package cortana.metasploit;
 
-import java.util.*;
-import java.awt.*;
-import java.awt.event.*;
+import msf.RpcConnection;
 
-import msf.*;
-import java.math.*;
-import java.security.*;
+import java.math.BigInteger;
+import java.security.SecureRandom;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Map;
 
 /* Implements a class for writing commands to a shell and firing an
    event when the command is successfully executed (with its output) */
@@ -23,9 +23,9 @@ public class ShellSession implements Runnable {
 		public long	start = System.currentTimeMillis();
 	}
 
-	public static interface ShellCallback {
-		public void commandComplete(String session, Object token, String response);
-		public void commandUpdate(String session, Object token, String response);
+	public interface ShellCallback {
+		void commandComplete(String session, Object token, String response);
+		void commandUpdate(String session, Object token, String response);
 	}
 
 	public void addListener(ShellCallback l) {
@@ -62,16 +62,16 @@ public class ShellSession implements Runnable {
 		try {
 			String marker = new BigInteger(130, random).toString(32) + "\n";
 
-			StringBuffer writeme = new StringBuffer();
+			StringBuilder writeme = new StringBuilder();
 			writeme.append(c.text);
 			writeme.append("\n");
-			writeme.append("echo " + marker);
+			writeme.append("echo ").append(marker);
 
 			/* write our command to whateverz */
 			connection.execute("session.shell_write", new Object[] { session, writeme.toString() });
 
 			/* read until we encounter AAAAAAAAAA */
-			StringBuffer output = new StringBuffer();
+			StringBuilder output = new StringBuilder();
 
 			/* loop forever waiting for response to come back. If session is dead
 			   then this loop will break with an exception */
@@ -132,7 +132,7 @@ public class ShellSession implements Runnable {
 
 				Thread.sleep(500);
 			}
-			catch (Exception ex) {
+			catch (Exception ignored) {
 			}
 		}
 	}

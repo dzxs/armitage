@@ -1,10 +1,11 @@
 package console;
 
-import java.awt.*;
-import java.awt.event.*;
-
 import javax.swing.*;
-import javax.swing.text.*;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyledDocument;
+import java.awt.*;
 
 /* a class for managing and parsing colors */
 public class Colors {
@@ -59,7 +60,7 @@ public class Colors {
 		showcolors = "true".equals(prefs.getProperty("console.show_colors.boolean", "true"));
 	}
 
-	protected Color colorTable[];
+    protected Color[] colorTable;
 
 	/* strip format codes from the text */
 	public String strip(String text) {
@@ -68,7 +69,7 @@ public class Colors {
 	}
 
 	private String strip(Fragment f) {
-		StringBuffer buffer = new StringBuffer(128);
+		StringBuilder buffer = new StringBuilder(128);
 		while (f != null) {
 			buffer.append(f.text);
 			f = f.next;

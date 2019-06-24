@@ -1,22 +1,11 @@
 package cortana.data;
 
-import cortana.core.*;
-
-import armitage.ArmitageTimerClient;
-import armitage.ArmitageTimer;
-
-import graph.Route;
-
-import sleep.bridges.*;
-import sleep.interfaces.*;
-import sleep.runtime.*;
-import sleep.engine.*;
+import cortana.core.EventManager;
+import cortana.core.FilterManager;
+import msf.RpcConnection;
+import sleep.runtime.Scalar;
 
 import java.util.*;
-
-import java.io.IOException;
-
-import msf.*;
 
 public class Credentials extends ManagedData {
 	protected RpcConnection  client;
@@ -51,17 +40,16 @@ public class Credentials extends ManagedData {
 
 	protected Set toSet(List results) {
 		Set temp = new HashSet();
-		Iterator i = results.iterator();
-		while (i.hasNext()) {
-			Map data = (Map)i.next();
-			String host = data.get("host") + "";
-			String port = data.get("port") + "";
-			String user = data.get("user") + "";
-			String pass = data.get("pass") + "";
-			String type = data.get("ptype") + "";
+        for (Object result : results) {
+            Map data = (Map) result;
+            String host = data.get("host") + "";
+            String port = data.get("port") + "";
+            String user = data.get("user") + "";
+            String pass = data.get("pass") + "";
+            String type = data.get("ptype") + "";
 
-			temp.add(new Credential(host, port, user, pass, type));
-		}
+            temp.add(new Credential(host, port, user, pass, type));
+        }
 		return temp;
 	}
 

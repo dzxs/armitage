@@ -1,11 +1,11 @@
 package armitage;
 
 import console.Console;
-import msf.*;
-import java.util.*;
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
+import msf.MeterpreterSession;
+
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.Map;
 
 /* This is a rewritten client class to keep compatible with ConsoleClient but interface with the new
    MeterpreterSession class. This new class makes sure each command is executed and receives its output
@@ -61,9 +61,9 @@ public class MeterpreterClient implements ActionListener, MeterpreterSession.Met
 		/* nothing we need to do for now */
 	}
 
-	protected void finalize() {
+	/*protected void finalize() {
 		actionPerformed(null);
-	}
+	}*/
 
 	public void sendString(String text) {
 		window.append(window.getPromptText() + text);
@@ -71,27 +71,25 @@ public class MeterpreterClient implements ActionListener, MeterpreterSession.Met
 	}
 
 	protected void setupListener() {
-		window.getInput().addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent ev) {
-				String text = window.getInput().getText() + "\n";
-				window.getInput().setText("");
+		window.getInput().addActionListener(ev -> {
+			String text = window.getInput().getText() + "\n";
+			window.getInput().setText("");
 
-				/* too many users typing "shell whatever" inside of a meterpreter window... need to prevent problems */
-				if (shellCommand != null && text.trim().startsWith("shell")) {
-					shellCommand.actionPerformed(new ActionEvent(window, 0, "shell"));
-				}
-				else if (shellCommand != null && text.trim().equals("screenshot")) {
-					shellCommand.actionPerformed(new ActionEvent(window, 0, "screenshot"));
-				}
-				else if (shellCommand != null && text.trim().equals("webcam_snap")) {
-					shellCommand.actionPerformed(new ActionEvent(window, 0, "webcam_snap"));
-				}
-				else if (shellCommand != null && text.trim().equals("upload")) {
-					shellCommand.actionPerformed(new ActionEvent(window, 0, "upload"));
-				}
-				else {
-					sendString(text);
-				}
+			/* too many users typing "shell whatever" inside of a meterpreter window... need to prevent problems */
+			if (shellCommand != null && text.trim().startsWith("shell")) {
+				shellCommand.actionPerformed(new ActionEvent(window, 0, "shell"));
+			}
+			else if (shellCommand != null && text.trim().equals("screenshot")) {
+				shellCommand.actionPerformed(new ActionEvent(window, 0, "screenshot"));
+			}
+			else if (shellCommand != null && text.trim().equals("webcam_snap")) {
+				shellCommand.actionPerformed(new ActionEvent(window, 0, "webcam_snap"));
+			}
+			else if (shellCommand != null && text.trim().equals("upload")) {
+				shellCommand.actionPerformed(new ActionEvent(window, 0, "upload"));
+			}
+			else {
+				sendString(text);
 			}
 		});
 	}

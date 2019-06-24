@@ -1,22 +1,12 @@
 package cortana.data;
 
-import cortana.core.*;
-
-import armitage.ArmitageTimerClient;
-import armitage.ArmitageTimer;
-
+import cortana.core.EventManager;
+import cortana.core.FilterManager;
 import graph.Route;
-
-import sleep.bridges.*;
-import sleep.interfaces.*;
-import sleep.runtime.*;
-import sleep.engine.*;
+import msf.RpcConnection;
+import sleep.runtime.Scalar;
 
 import java.util.*;
-
-import java.io.IOException;
-
-import msf.*;
 
 public class Routes extends ManagedData {
 	protected RpcConnection  client;
@@ -57,31 +47,28 @@ public class Routes extends ManagedData {
 		cache = null;
 
 		/* create a set of existing routes */
-		Set oldRoutes = new HashSet();
-		oldRoutes.addAll(routes);
+		Set oldRoutes = new HashSet(routes);
 
 		routes.clear();
 
 		/* parse and add routes */
 
-		Iterator i = results.entrySet().iterator();
-		while (i.hasNext()) {
-			Map.Entry temp = (Map.Entry)i.next();
-			String sid = temp.getKey() + "";
-			Map session = (Map)temp.getValue();
+        for (Object o : results.entrySet()) {
+            Map.Entry temp = (Map.Entry) o;
+            String sid = temp.getKey() + "";
+            Map session = (Map) temp.getValue();
 
-			if (!"".equals(session.get("routes") + "")) {
-				String[] routez = (session.get("routes") + "").split(",");
-				for (int x = 0; x < routez.length; x++) {
-					String zz[] = routez[x].split("/");
+            if (!"".equals(session.get("routes") + "")) {
+                String[] routez = (session.get("routes") + "").split(",");
+				for (String s : routez) {
+                    String[] zz = s.split("/");
 					routes.add(new Route(zz[0], zz[1], sid));
 				}
-			}
-		}
+            }
+        }
 
 		/* setup a set of our new routes */
-		Set currentRoutes = new HashSet();
-		currentRoutes.addAll(routes);
+		Set currentRoutes = new HashSet(routes);
 
 		/* now... bucket our routes and fire some events */
 		Set newRoutes = DataUtils.difference(currentRoutes, oldRoutes);

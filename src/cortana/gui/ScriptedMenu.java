@@ -1,16 +1,12 @@
 package cortana.gui;
 
-import java.awt.*;
-import java.awt.event.*;
+import sleep.bridges.SleepClosure;
+import sleep.runtime.SleepUtils;
 
 import javax.swing.*;
-import javax.swing.event.*;
-
-import sleep.runtime.*;
-import sleep.engine.*;
-import sleep.bridges.*;
-
-import java.util.*;
+import javax.swing.event.MenuEvent;
+import javax.swing.event.MenuListener;
+import java.util.Stack;
 
 /* implements a scripted menu */
 public class ScriptedMenu extends JMenu implements MenuListener {

@@ -1,12 +1,12 @@
 package graph;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import com.mxgraph.layout.mxCircleLayout;
 import com.mxgraph.model.mxIGraphModel;
 import com.mxgraph.util.mxRectangle;
 import com.mxgraph.view.mxGraph;
-import com.mxgraph.layout.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class CircleLayout extends mxCircleLayout
 {
@@ -24,7 +24,7 @@ public class CircleLayout extends mxCircleLayout
 			double max = 0;
 			Double top = null;
 			Double left = null;
-			List<Object> vertices = new ArrayList<Object>();
+			List<Object> vertices = new ArrayList<>();
 			int childCount = model.getChildCount(parent);
 
 			for (int i = 0; i < childCount; i++)
@@ -80,7 +80,7 @@ public class CircleLayout extends mxCircleLayout
 				left = y0;
 			}
 
-			circle(vertices.toArray(), r, left.doubleValue(), top.doubleValue());
+			circle(vertices.toArray(), r, left, top);
 		}
 		finally
 		{

@@ -1,9 +1,7 @@
 package ui;
 
-import java.awt.*;
 import javax.swing.*;
-import javax.swing.tree.*;
-import java.util.*;
+import javax.swing.tree.TreeNode;
 
 public class ATree extends JTree {
 	public ATree(TreeNode root) {

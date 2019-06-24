@@ -1,24 +1,24 @@
 package graph;
 
+import com.mxgraph.layout.mxFastOrganicLayout;
+import com.mxgraph.layout.mxGraphLayout;
+import com.mxgraph.layout.mxStackLayout;
+import com.mxgraph.model.mxCell;
+import com.mxgraph.swing.handler.mxRubberband;
+import com.mxgraph.swing.mxGraphComponent;
+import com.mxgraph.swing.util.mxSwingConstants;
+import com.mxgraph.swing.view.mxInteractiveCanvas;
+import com.mxgraph.util.mxCellRenderer;
+import com.mxgraph.view.mxGraph;
+
 import javax.swing.*;
-import javax.swing.event.*;
-import javax.swing.border.*;
-
 import java.awt.*;
-import java.awt.event.*;
-
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.image.BufferedImage;
 import java.util.*;
-
-import com.mxgraph.swing.*;
-import com.mxgraph.view.*;
-import com.mxgraph.model.*;
-import com.mxgraph.layout.*;
-import com.mxgraph.swing.util.*;
-import com.mxgraph.swing.handler.*;
-import com.mxgraph.swing.view.*;
-import com.mxgraph.util.*;
-
-import java.awt.image.*;
 
 public class NetworkGraph extends JComponent implements ActionListener, Refreshable {
 	protected mxGraph graph;
@@ -42,9 +42,9 @@ public class NetworkGraph extends JComponent implements ActionListener, Refresha
 	protected Map nodeImages = new HashMap();
 
 	private class NetworkGraphCanvas extends mxInteractiveCanvas {
-		public Image loadImage(String image) {
+		public BufferedImage loadImage(String image) {
 			if (nodeImages.containsKey(image)) {
-				return (Image)nodeImages.get(image);
+				return (BufferedImage)nodeImages.get(image);
 			}
 
 			return super.loadImage(image);
@@ -86,9 +86,7 @@ public class NetworkGraph extends JComponent implements ActionListener, Refresha
 		LinkedList cells = new LinkedList();
 
 		/* add the edges to our list of cells to render */
-		Iterator i = nodes.values().iterator();
-		while (i.hasNext()) {
-			Object node = i.next();
+		for (Object node : nodes.values()) {
 			cells.addAll(Arrays.asList(graph.getEdges(node)));
 		}
 
@@ -121,8 +119,8 @@ public class NetworkGraph extends JComponent implements ActionListener, Refresha
 	public NetworkGraph(Properties display) {
 
 		/* update a few global properties */
-		mxConstants.VERTEX_SELECTION_COLOR = Color.decode(display.getProperty("graph.selection.color", "#00ff00"));
-		mxConstants.EDGE_SELECTION_COLOR = Color.decode(display.getProperty("graph.edge.color", "#3c6318"));
+		mxSwingConstants.VERTEX_SELECTION_COLOR = Color.decode(display.getProperty("graph.selection.color", "#00ff00"));
+		mxSwingConstants.EDGE_SELECTION_COLOR = Color.decode(display.getProperty("graph.edge.color", "#3c6318"));
 
 		/* on with the show */
 
@@ -287,8 +285,8 @@ public class NetworkGraph extends JComponent implements ActionListener, Refresha
 
 		Object[] cells = graph.getSelectionCells();
 
-		for (int y = 0; y < cells.length; y++) {
-			cell = (mxCell)cells[y];
+		for (Object o : cells) {
+			cell = (mxCell) o;
 			if (nodes.containsKey(cell.getId()))
 				sel.add(cell.getId());
 		}
@@ -369,12 +367,10 @@ public class NetworkGraph extends JComponent implements ActionListener, Refresha
 			graph.refresh();
 		}
 		else {
-			SwingUtilities.invokeLater(new Runnable() {
-				public void run() {
-					autoLayout();
-					graph.refresh();
-				}
-			});
+			SwingUtilities.invokeLater(() -> {
+                autoLayout();
+                graph.refresh();
+            });
 		}
 	}
 
@@ -415,26 +411,24 @@ public class NetworkGraph extends JComponent implements ActionListener, Refresha
 	/** show the meterpreter routes . :) */
 	public void setRoutes(Route[] routes) {
 		/* clear the existing edges... */
-		Iterator ij = edges.iterator();
-		while (ij.hasNext()) {
-			mxCell cell = (mxCell)ij.next();
+		for (Object value : edges) {
+			mxCell cell = (mxCell) value;
 			graph.getModel().remove(cell);
 		}
 
 		edges = new LinkedList();
 
 		/* start updating the graph with our new shtuff */
-		Iterator i = nodes.entrySet().iterator();
-		while (i.hasNext()) {
-			Map.Entry temp = (Map.Entry)i.next();
+		for (Object o : nodes.entrySet()) {
+			Map.Entry temp = (Map.Entry) o;
 
-			for (int x = 0; x < routes.length; x++) {
-				mxCell start = (mxCell)nodes.get(routes[x].getGateway());
+			for (Route route : routes) {
+				mxCell start = (mxCell) nodes.get(route.getGateway());
 
-				if ( start != null && !temp.getKey().equals(routes[x].getGateway()) ) {
-					if ( routes[x].shouldRoute((String)temp.getKey()) ) {
-						mxCell node = (mxCell)temp.getValue();
-						mxCell edge = (mxCell)graph.insertEdge(parent, null, "", start, node);
+				if (start != null && !temp.getKey().equals(route.getGateway())) {
+					if (route.shouldRoute((String) temp.getKey())) {
+						mxCell node = (mxCell) temp.getValue();
+						mxCell edge = (mxCell) graph.insertEdge(parent, null, "", start, node);
 						edge.setStyle("strokeColor=" + display.getProperty("graph.edge.color", "#3c6318") + ";strokeWidth=4");
 						edges.add(edge);
 					}
@@ -474,14 +468,14 @@ public class NetworkGraph extends JComponent implements ActionListener, Refresha
 
 		/* create the style for this node based on the properties object */
 
-		StringBuffer style = new StringBuffer();
-		style.append("shape=image;image=" + id + ";");
-		style.append("fontColor=" + display.getProperty("graph.foreground.color", "#cccccc") + ";");
+		StringBuilder style = new StringBuilder();
+		style.append("shape=image;image=").append(id).append(";");
+		style.append("fontColor=").append(display.getProperty("graph.foreground.color", "#cccccc")).append(";");
 
 		Font font = Font.decode(display.getProperty("graph.font.font", "Monospaced BOLD 14"));
-		style.append("fontSize=" + font.getSize() + ";");
-		style.append("fontFamily=" + font.getFamily() + ";");
-		style.append("fontStyle=" + font.getStyle() + ";");
+		style.append("fontSize=").append(font.getSize()).append(";");
+		style.append("fontFamily=").append(font.getFamily()).append(";");
+		style.append("fontStyle=").append(font.getStyle()).append(";");
 
 		style.append("verticalLabelPosition=bottom;verticalAlign=top");
 

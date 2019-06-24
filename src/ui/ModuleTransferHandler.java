@@ -1,12 +1,11 @@
 package ui;
 
-import java.awt.*;
-import java.awt.event.*;
 import javax.swing.*;
-
-import java.awt.datatransfer.*;
-import java.awt.dnd.*;
-import javax.swing.tree.*;
+import javax.swing.tree.TreePath;
+import java.awt.*;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.StringSelection;
+import java.awt.datatransfer.Transferable;
 
 public class ModuleTransferHandler extends TransferHandler {
 	public int getSourceActions(JComponent c) {
@@ -19,10 +18,10 @@ public class ModuleTransferHandler extends TransferHandler {
 			TreePath path = temp.getSelectionPath();
 
 			if (path != null) {
-				StringBuffer pathz = new StringBuffer();
-				Object o[] = path.getPath();
+				StringBuilder pathz = new StringBuilder();
+                Object[] o = path.getPath();
 				for (int x = 1; x < o.length; x++) {
-					pathz.append(o[x] + "");
+					pathz.append(o[x]);
 
 					if ((x + 1) < o.length)
 						pathz.append("/");
@@ -45,7 +44,7 @@ public class ModuleTransferHandler extends TransferHandler {
 	}
 
 	public interface ModuleTransferListener {
-		public void completeTransfer(String text, Point location);
+		void completeTransfer(String text, Point location);
 	}
 
 	protected ModuleTransferListener completeJob = null;
@@ -60,7 +59,7 @@ public class ModuleTransferHandler extends TransferHandler {
 			if (completeJob != null)
 				completeJob.completeTransfer(text, coords);
 		}
-		catch (Exception ex) {
+		catch (Exception ignored) {
 
 		}
 		return true;

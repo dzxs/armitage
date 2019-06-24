@@ -1,14 +1,15 @@
 package ssl;
 
-import java.net.*;
-import java.io.*;
-import javax.net.ssl.*;
-import javax.net.*;
+import sleep.bridges.io.IOObject;
 
-import java.security.*;
-import java.security.cert.*;
-
-import sleep.bridges.io.*;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+import java.io.BufferedOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.net.Socket;
 
 /* taken from jIRCii, I developed it, so I get to do what I want ;) */
 public class SecureSocket {

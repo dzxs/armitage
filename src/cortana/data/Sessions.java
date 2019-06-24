@@ -1,22 +1,12 @@
 package cortana.data;
 
-import cortana.core.*;
-
-import armitage.ArmitageTimerClient;
-import armitage.ArmitageTimer;
-
-import graph.Route;
-
-import sleep.bridges.*;
-import sleep.interfaces.*;
-import sleep.runtime.*;
-import sleep.engine.*;
+import cortana.core.EventManager;
+import cortana.core.FilterManager;
+import msf.RpcConnection;
+import sleep.runtime.Scalar;
+import sleep.runtime.SleepUtils;
 
 import java.util.*;
-
-import java.io.IOException;
-
-import msf.*;
 
 public class Sessions extends ManagedData {
 	protected RpcConnection  client;
@@ -62,7 +52,7 @@ public class Sessions extends ManagedData {
 		}
 	}
 
-	private static final void fixIPv6(Map data, String key) {
+	private static void fixIPv6(Map data, String key) {
 		if (!data.containsKey(key))
 			return;
 
@@ -86,67 +76,62 @@ public class Sessions extends ManagedData {
 		sessions = results;
 
 		Set before = new HashSet();
-		Set after  = new HashSet();
 		Map dataz  = new HashMap();
 
 		Set syncz  = new HashSet(); /* track sessions that are now synced */
 
 		/* clear all of the sessions */
-		Iterator j = hosts.getHosts().values().iterator();
-		while (j.hasNext()) {
-			Host host = (Host)j.next();
-			before.addAll(host.getSessions().keySet());
-			dataz.putAll(host.getSessions());
-			host.getSessions().clear();
-		}
+        for (Object value : hosts.getHosts().values()) {
+            Host host = (Host) value;
+            before.addAll(host.getSessions().keySet());
+            dataz.putAll(host.getSessions());
+            host.getSessions().clear();
+        }
 
 		/* add all of these sessions to our after set*/
-		after.addAll(results.keySet());
+		Set after = new HashSet(results.keySet());
 		dataz.putAll(results);
 
 		/* add sessions to the appropriate hosts*/
-		Iterator k = results.entrySet().iterator();
-		while (k.hasNext()) {
-			Map.Entry temp    = (Map.Entry)k.next();
-			String    sid     = temp.getKey() + "";
-			Map       session = (Map)temp.getValue();
+        for (Object o : results.entrySet()) {
+            Map.Entry temp = (Map.Entry) o;
+            String sid = temp.getKey() + "";
+            Map session = (Map) temp.getValue();
 
-			/* fix a few things */
-			fixIPv6(session, "session_host");
-			fixIPv6(session, "target_host");
-			fixIPv6(session, "tunnel_peer");
+            /* fix a few things */
+            fixIPv6(session, "session_host");
+            fixIPv6(session, "target_host");
+            fixIPv6(session, "tunnel_peer");
 
-			/* extract the address */
-			String address = session.get("session_host") + "";
+            /* extract the address */
+            String address = session.get("session_host") + "";
 
-			if ("".equals(address)) {
-				address = session.get("target_host") + "";
-			}
+            if ("".equals(address)) {
+                address = session.get("target_host") + "";
+            }
 
-			if ("".equals(address)) {
-				address = ((String)session.get("tunnel_peer")).split(":")[0];
-			}
+            if ("".equals(address)) {
+                address = ((String) session.get("tunnel_peer")).split(":")[0];
+            }
 
-			/* OK, now move on with life... */
-			if (hosts.getHosts().containsKey(address)) {
-				Host host = (Host)hosts.getHosts().get(address);
-				host.getSessions().put(sid, session);
-				session.put("host", address);
-			}
-			else {
-				/* Do not fire an event if there is no host to associate session with */
-				before.remove(sid);
-				after.remove(sid);
-			}
+            /* OK, now move on with life... */
+            if (hosts.getHosts().containsKey(address)) {
+                Host host = (Host) hosts.getHosts().get(address);
+                host.getSessions().put(sid, session);
+                session.put("host", address);
+            } else {
+                /* Do not fire an event if there is no host to associate session with */
+                before.remove(sid);
+                after.remove(sid);
+            }
 
-			/* track which sessions are synced and which are not */
-			if ("".equals(session.get("info"))) {
-				nonsync.add(sid);
-			}
-			else {
-				syncz.add(sid);
-			}
-		}
+            /* track which sessions are synced and which are not */
+            if ("".equals(session.get("info"))) {
+                nonsync.add(sid);
+            } else {
+                syncz.add(sid);
+            }
+        }
 
 		/* calculate the differences and fire some events based on them */
 		Set newSessions = DataUtils.difference(after, before);

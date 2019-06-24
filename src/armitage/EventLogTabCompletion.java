@@ -1,13 +1,13 @@
 package armitage;
 
 import console.Console;
-import msf.*;
-import java.util.*;
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
+import msf.RpcConnection;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Map;
 
 public class EventLogTabCompletion extends GenericTabCompletion {
 	protected RpcConnection connection;

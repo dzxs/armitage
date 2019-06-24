@@ -1,9 +1,5 @@
 package armitage;
 
-import console.Console;
-import msf.*;
-import java.util.*;
-
 /** A generic class to execute several queries and return their results */
 public class SimpleTimer implements Runnable {
 	protected long                sleepPeriod;

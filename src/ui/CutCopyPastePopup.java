@@ -1,11 +1,9 @@
 package ui;
 
 import javax.swing.*;
-import javax.swing.event.*;
-import javax.swing.text.*;
-
-import java.awt.*;
-import java.awt.event.*;
+import javax.swing.text.JTextComponent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 
 /* A textfield with a popup menu to cut, copy, paste, and clear the textfield */
@@ -25,35 +23,19 @@ public class CutCopyPastePopup {
 		menu = new JPopupMenu();
 		JMenuItem cut = new JMenuItem("Cut", 'C');
 
-		cut.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent ev) {
-				component.cut();
-			}
-		});
+		cut.addActionListener(ev -> component.cut());
 
 		JMenuItem copy = new JMenuItem("Copy", 'o');
 
-		copy.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent ev) {
-				component.copy();
-			}
-		});
+		copy.addActionListener(ev -> component.copy());
 
 		JMenuItem paste = new JMenuItem("Paste", 'p');
 
-		paste.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent ev) {
-				component.paste();
-			}
-		});
+		paste.addActionListener(ev -> component.paste());
 
 		JMenuItem clear = new JMenuItem("Clear", 'l');
 
-		clear.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent ev) {
-				component.setText("");
-			}
-		});
+		clear.addActionListener(ev -> component.setText(""));
 
 		menu.add(cut);
 		menu.add(copy);

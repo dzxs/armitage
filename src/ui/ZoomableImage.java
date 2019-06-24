@@ -2,9 +2,9 @@ package ui;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.image.*;
-import java.awt.event.*;
-import java.util.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.image.BufferedImage;
 
 public class ZoomableImage extends JLabel {
 	protected Icon original = null;
@@ -12,12 +12,10 @@ public class ZoomableImage extends JLabel {
 
 	private JMenuItem zoomMenu(String label, final double level) {
 		JMenuItem i = new JMenuItem(label);
-		i.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent ev) {
-				zoom = level;
-				updateIcon();
-			}
-		});
+		i.addActionListener(ev -> {
+            zoom = level;
+            updateIcon();
+        });
 		return i;
 	}
 

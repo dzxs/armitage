@@ -1,15 +1,15 @@
 package ui;
 
-import javax.swing.*;
-import javax.swing.event.*;
-
-import java.awt.*;
-import java.awt.event.*;
-
-import java.util.*;
-
 import armitage.ArmitageApplication;
-import msf.*;
+import msf.Async;
+import msf.RpcConnection;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.util.*;
 
 /* A class to host multiple Armitage instances in one frame. Srsly */
 public class MultiFrame extends JFrame implements KeyEventDispatcher {
@@ -33,12 +33,10 @@ public class MultiFrame extends JFrame implements KeyEventDispatcher {
 
 		i.serviced = true;
 
-		SwingUtilities.invokeLater(new Runnable() {
-			public void run() {
-				i.button.setForeground(Color.RED);
-				i.app.disconnected();
-			}
-		});
+		SwingUtilities.invokeLater(() -> {
+            i.button.setForeground(Color.RED);
+            i.app.disconnected();
+        });
 	}
 
 	protected Set idle = new HashSet();
@@ -48,51 +46,38 @@ public class MultiFrame extends JFrame implements KeyEventDispatcher {
 
 		idle.add(i);
 
-		SwingUtilities.invokeLater(new Runnable() {
-			public void run() {
-				i.button.setForeground(Color.MAGENTA);
-			}
-		});
+		SwingUtilities.invokeLater(() -> i.button.setForeground(Color.MAGENTA));
 	}
 
 	public void actOnNotIdle(final ArmitageInstance i) {
 		idle.remove(i);
 
-		SwingUtilities.invokeLater(new Runnable() {
-			public void run() {
-				i.button.setForeground(Color.BLACK);
-			}
-		});
+		SwingUtilities.invokeLater(() -> i.button.setForeground(Color.BLACK));
 	}
 
 	public void watchDog() {
 		/* watch for any disconnected sessions and warn the user */
-		new Thread(new Runnable() {
-			public void run() {
-				while (true) {
-					synchronized (buttons) {
-						Iterator i = buttons.iterator();
-						while (i.hasNext()) {
-							ArmitageInstance temp = (ArmitageInstance)i.next();
-							if (!((Async)temp.client).isConnected()) {
-								actOnDisconnect(temp);
-							}
-							else if (!((Async)temp.client).isResponsive()) {
-								actOnIdle(temp);
-							}
-							else if (idle.contains(temp)) {
-								actOnNotIdle(temp);
-							}
-						}
-					}
+		new Thread(() -> {
+            while (true) {
+                synchronized (buttons) {
+                    for (Object button : buttons) {
+                        ArmitageInstance temp = (ArmitageInstance) button;
+                        if (!((Async) temp.client).isConnected()) {
+                            actOnDisconnect(temp);
+                        } else if (!((Async) temp.client).isResponsive()) {
+                            actOnIdle(temp);
+                        } else if (idle.contains(temp)) {
+                            actOnNotIdle(temp);
+                        }
+                    }
+                }
 
-					try {
-						Thread.sleep(1000);
-					}
-					catch (Exception ex) {}
-				}
-			}
-		}).start();
+                try {
+                    Thread.sleep(1000);
+                }
+                catch (Exception ignored) {}
+            }
+        }).start();
 	}
 
 	public void setPreferences(Properties prefs) {
@@ -107,14 +92,13 @@ public class MultiFrame extends JFrame implements KeyEventDispatcher {
 		synchronized (buttons) {
 			Map r = new HashMap();
 
-			Iterator i = buttons.iterator();
-			while (i.hasNext()) {
-				ArmitageInstance temp = (ArmitageInstance)i.next();
-				/* only return clients that are connected AND responsive */
-				if (((Async)temp.client).isConnected() && ((Async)temp.client).isResponsive()) {
-					r.put(temp.button.getText(), temp.client);
-				}
-			}
+            for (Object button : buttons) {
+                ArmitageInstance temp = (ArmitageInstance) button;
+                /* only return clients that are connected AND responsive */
+                if (((Async) temp.client).isConnected() && ((Async) temp.client).isResponsive()) {
+                    r.put(temp.button.getText(), temp.client);
+                }
+            }
 			return r;
 		}
 	}
@@ -135,13 +119,12 @@ public class MultiFrame extends JFrame implements KeyEventDispatcher {
 	/* is localhost running? */
 	public boolean checkCollision(String name) {
 		synchronized (buttons) {
-			Iterator i = buttons.iterator();
-			while (i.hasNext()) {
-				ArmitageInstance temp = (ArmitageInstance)i.next();
-				if (name.equals(temp.button.getText())) {
-					return true;
-				}
-			}
+            for (Object button : buttons) {
+                ArmitageInstance temp = (ArmitageInstance) button;
+                if (name.equals(temp.button.getText())) {
+                    return true;
+                }
+            }
 			return false;
 		}
 	}
@@ -153,7 +136,7 @@ public class MultiFrame extends JFrame implements KeyEventDispatcher {
 		return false;
 	}
 
-	public static final void setupLookAndFeel() {
+	public static void setupLookAndFeel() {
 		try {
 			for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
 				if ("Nimbus".equals(info.getName())) {
@@ -162,7 +145,7 @@ public class MultiFrame extends JFrame implements KeyEventDispatcher {
 				}
 			}
 		}
-		catch (Exception e) {
+		catch (Exception ignored) {
 		}
 	}
 
@@ -245,18 +228,16 @@ public class MultiFrame extends JFrame implements KeyEventDispatcher {
 	protected void set(JToggleButton button) {
 		synchronized (buttons) {
 			/* set all buttons to the right state */
-			Iterator i = buttons.iterator();
-			while (i.hasNext()) {
-				ArmitageInstance temp = (ArmitageInstance)i.next();
-				if (temp.button.getText().equals(button.getText())) {
-					temp.button.setSelected(true);
-					active = temp.app;
-					setTitle(active.getTitle());
-				}
-				else {
-					temp.button.setSelected(false);
-				}
-			}
+            for (Object o : buttons) {
+                ArmitageInstance temp = (ArmitageInstance) o;
+                if (temp.button.getText().equals(button.getText())) {
+                    temp.button.setSelected(true);
+                    active = temp.app;
+                    setTitle(active.getTitle());
+                } else {
+                    temp.button.setSelected(false);
+                }
+            }
 
 			/* show our cards? */
 			cards.show(content, button.getText());
@@ -278,11 +259,7 @@ public class MultiFrame extends JFrame implements KeyEventDispatcher {
 			a.app    = component;
 			a.client = conn;
 
-			a.button.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent ev) {
-					set((JToggleButton)ev.getSource());
-				}
-			});
+			a.button.addActionListener(ev -> set((JToggleButton)ev.getSource()));
 
 			a.button.addMouseListener(new MouseAdapter() {
 				public void check(MouseEvent ev) {
@@ -290,17 +267,15 @@ public class MultiFrame extends JFrame implements KeyEventDispatcher {
 						final JToggleButton source = a.button;
 						JPopupMenu popup = new JPopupMenu();
 						JMenuItem  rename = new JMenuItem("Rename");
-						rename.addActionListener(new ActionListener() {
-							public void actionPerformed(ActionEvent ev) {
-								String name = JOptionPane.showInputDialog("Rename to?", source.getText());
-								if (name != null) {
-									content.remove(component);
-									content.add(component, name);
-									source.setText(name);
-									set(source);
-								}
-							}
-						});
+						rename.addActionListener(ev1 -> {
+                            String name = JOptionPane.showInputDialog("Rename to?", source.getText());
+                            if (name != null) {
+                                content.remove(component);
+                                content.add(component, name);
+                                source.setText(name);
+                                set(source);
+                            }
+                        });
 						popup.add(rename);
 						popup.show((JComponent)ev.getSource(), ev.getX(), ev.getY());
 						ev.consume();
@@ -326,7 +301,7 @@ public class MultiFrame extends JFrame implements KeyEventDispatcher {
 			set(a.button);
 
 			if (buttons.size() == 1) {
-				show();
+				setVisible(true);
 			}
 			else if (buttons.size() == 2) {
 				add(toolbar, BorderLayout.SOUTH);

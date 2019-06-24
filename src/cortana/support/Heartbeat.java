@@ -1,9 +1,10 @@
 package cortana.support;
 
-import cortana.core.*;
-import cortana.*;
+import cortana.core.EventManager;
 
-import java.util.*;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Stack;
 
 /* a thread to keep track of different timer events and fire them off when it's appropriate */
 public class Heartbeat implements Runnable {
@@ -32,7 +33,7 @@ public class Heartbeat implements Runnable {
 	public Heartbeat(EventManager e) {
 		events = e;
 		beats = new LinkedList();
-		beats.add(new Beat("heartbeat_1s", 1 * 1000));
+		beats.add(new Beat("heartbeat_1s", 1000));
 		beats.add(new Beat("heartbeat_5s", 5 * 1000));
 		beats.add(new Beat("heartbeat_10s", 10 * 1000));
 		beats.add(new Beat("heartbeat_15s", 15 * 1000));
@@ -54,11 +55,10 @@ public class Heartbeat implements Runnable {
 		while (true) {
 			try {
 				long now = System.currentTimeMillis();
-				Iterator i = beats.iterator();
-				while (i.hasNext()) {
-					Beat temp = (Beat)i.next();
-					temp.check(now);
-				}
+                for (Object beat : beats) {
+                    Beat temp = (Beat) beat;
+                    temp.check(now);
+                }
 				Thread.sleep(1000);
 			}
 			catch (Exception ex) {

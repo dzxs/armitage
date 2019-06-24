@@ -1,14 +1,12 @@
 package cortana.gui;
 
-import sleep.runtime.*;
-import sleep.bridges.*;
-
-import java.awt.*;
-import java.awt.event.*;
+import sleep.bridges.SleepClosure;
+import sleep.runtime.SleepUtils;
 
 import javax.swing.*;
-
-import java.util.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.Stack;
 
 public class ScriptedMenuItem extends JMenuItem implements ActionListener {
 	protected String       label;

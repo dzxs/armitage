@@ -1,11 +1,12 @@
 package armitage;
 
-import java.util.*;
+import java.util.LinkedList;
+import java.util.List;
 
 /* an object to track listeners for disconnects... */
 public class DisconnectNotifier {
 	public interface DisconnectListener {
-		public void disconnected(String reason);
+		void disconnected(String reason);
 	}
 
 	protected List listeners    = new LinkedList();
@@ -18,20 +19,17 @@ public class DisconnectNotifier {
 	}
 
 	public void fireDisconnectEvent(final String reason) {
-		new Thread(new Runnable() {
-			public void run() {
-				synchronized (listeners) {
-					if (!connected)
-						return;
+		new Thread(() -> {
+			synchronized (listeners) {
+				if (!connected)
+					return;
 
-					Iterator i = listeners.iterator();
-					while (i.hasNext()) {
-						DisconnectListener l = (DisconnectListener)i.next();
-						l.disconnected(reason);
-					}
+                for (Object listener : listeners) {
+                    DisconnectListener l = (DisconnectListener) listener;
+                    l.disconnected(reason);
+                }
 
-					connected = false;
-				}
+				connected = false;
 			}
 		}).start();
 	}

@@ -1,14 +1,8 @@
 package msf;
 
-import console.*;
-
-import java.util.*;
-import java.awt.*;
-import java.awt.event.*;
-
-import msf.*;
-import java.math.*;
-import java.security.*;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Map;
 
 /* A pretty quick and dirty queue for executing RPC commands in turn and discarding their output. This
    has to be 100x better than creating a thread for every async thing I want to have happen via an RPC

@@ -1,12 +1,18 @@
 package msf;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
-import javax.net.ssl.*;
-import org.msgpack.*;
+import org.msgpack.MessagePack;
 import org.msgpack.type.*;
-import org.msgpack.packer.*;
+
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.*;
 
 /**
  * Taken from BSD licensed msfgui by scriptjunkie.
@@ -42,13 +48,9 @@ public class MsgRpcImpl extends RpcConnectionImpl {
 				}, new java.security.SecureRandom());
 
 				HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
-				HttpsURLConnection.setDefaultHostnameVerifier( new HostnameVerifier() {
-					public boolean verify(String string,SSLSession ssls) {
-						return true;
-					}
-				});
+				HttpsURLConnection.setDefaultHostnameVerifier((string, ssls) -> true);
 			}
-			catch (Exception e) {
+			catch (Exception ignored) {
 			}
 			u = new URL("https", host, port, "/api/1.0/");
 		}
@@ -139,8 +141,7 @@ public class MsgRpcImpl extends RpcConnectionImpl {
 
 		LinkedList temp = new LinkedList();
 		temp.add(methodName);
-		for (Object o : args)
-			temp.add(o);
+        Collections.addAll(temp, args);
 
 		packer.write(os, temp);
 		os.close();

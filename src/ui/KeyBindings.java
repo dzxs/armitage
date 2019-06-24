@@ -1,10 +1,10 @@
 package ui;
 
+import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
-import java.util.*;
-
-import javax.swing.SwingUtilities;
+import java.awt.event.KeyEvent;
+import java.util.HashMap;
+import java.util.Map;
 
 public class KeyBindings implements KeyEventDispatcher {
 	protected Map bindings = new HashMap();
@@ -33,8 +33,8 @@ public class KeyBindings implements KeyEventDispatcher {
 	}
 
 	public boolean dispatchKeyEvent(KeyEvent ev) {
-		StringBuffer description = new StringBuffer();
-		if (ev.getModifiers() != 0) {
+		StringBuilder description = new StringBuilder();
+		if (ev.getModifiersEx() != 0) {
 			description.append(getKeyModifiers(ev));
 		}
 
@@ -57,7 +57,7 @@ public class KeyBindings implements KeyEventDispatcher {
 	}
 
 	private static String getKeyModifiers(KeyEvent ev) {
-		StringBuffer modifiers = new StringBuffer();
+		StringBuilder modifiers = new StringBuilder();
 		if (ev.isShiftDown())
 			modifiers.append("Shift+");
 		if (ev.isControlDown())

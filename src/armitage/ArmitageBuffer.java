@@ -1,6 +1,9 @@
 package armitage;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Map;
 
 /*
  * Implement a thread safe store that any client may write to and
@@ -21,7 +24,7 @@ public class ArmitageBuffer {
 	public String  prompt = "";
 
 	/* store indices into this buffer */
-	public Map  indices  = new HashMap();
+	public Map<String, Message> indices = new HashMap<>();
 
 	/* setup the buffer?!? :) */
 	public ArmitageBuffer(long max) {
@@ -70,10 +73,9 @@ public class ArmitageBuffer {
 	}
 
 	/* retrieve a set of all clients consuming this buffer */
-	public Collection clients() {
+	public Collection<String> clients() {
 		synchronized (this) {
-			LinkedList clients = new LinkedList(indices.keySet());
-			return clients;
+			return new LinkedList<>(indices.keySet());
 		}
 	}
 
@@ -117,7 +119,7 @@ public class ArmitageBuffer {
 			}
 
 			/* now let's walk through it */
-			StringBuffer result = new StringBuffer();
+			StringBuilder result = new StringBuilder();
 			Message temp = index;
 			while (temp != null) {
 				result.append(temp.message);

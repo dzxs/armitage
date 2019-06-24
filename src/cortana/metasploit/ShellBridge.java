@@ -1,19 +1,20 @@
 package cortana.metasploit;
 
-import cortana.core.*;
-import cortana.*;
-import msf.*;
+import cortana.Safety;
+import cortana.core.EventManager;
+import cortana.core.FilterManager;
+import msf.RpcConnection;
+import sleep.bridges.BridgeUtilities;
+import sleep.bridges.SleepClosure;
+import sleep.interfaces.Function;
+import sleep.interfaces.Loadable;
+import sleep.runtime.Scalar;
+import sleep.runtime.ScriptInstance;
+import sleep.runtime.SleepUtils;
 
-import sleep.bridges.*;
-import sleep.interfaces.*;
-import sleep.runtime.*;
-import sleep.engine.*;
-
-import java.util.*;
-
-import java.io.IOException;
-
-import javax.swing.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Stack;
 
 public class ShellBridge implements Loadable, Function, ShellSession.ShellCallback {
 	protected EventManager  events;
@@ -116,7 +117,7 @@ public class ShellBridge implements Loadable, Function, ShellSession.ShellCallba
 
 		/* check our debug flags... */
 		if (Safety.shouldAsk(script)) {
-			StringBuffer description = new StringBuffer();
+			StringBuilder description = new StringBuilder();
 			description.append("<html><body><b>");
 			description.append(new java.io.File(script.getName()).getName());
 			description.append("</b> wants to write to shell session <b>");

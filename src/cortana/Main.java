@@ -6,13 +6,14 @@
  */
 package cortana;
 
-import msf.*;
-
-import java.util.*;
-import java.io.*;
-
+import msf.RpcConnection;
 import sleep.runtime.SleepUtils;
-import sleep.error.*;
+
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.Properties;
 
 public class Main implements Runnable, CortanaPipe.CortanaPipeListener {
 	/* setup a script loader, install the RPC connection as a global var, and load several Armitage
@@ -20,11 +21,7 @@ public class Main implements Runnable, CortanaPipe.CortanaPipeListener {
 	   as Armitage changes, Cortana will keep up, and this allows me to make design decisions that will
 	   make it easier to add Cortana to Armitage later. I'm not completely crazy. */
 	public static Object[] setupConnections(String host, String port, String user, String pass, String nick) {
-		Loader loader = new Loader(new RuntimeWarningWatcher() {
-			public void processScriptWarning(ScriptWarning warning) {
-				System.err.println(warning);
-			}
-		});
+		Loader loader = new Loader(System.err::println);
 		loader.setGlobal("$loader", SleepUtils.getScalar(loader));
 		loader.setGlobal("$host",   SleepUtils.getScalar(host));
 		loader.setGlobal("$port",   SleepUtils.getScalar(port));
@@ -59,7 +56,7 @@ public class Main implements Runnable, CortanaPipe.CortanaPipeListener {
 				if (entry != null && !"".equals(entry))
 					engine.processCommand(entry);
 			}
-			catch (IOException ioex) {
+			catch (IOException ignored) {
 			}
 		}
 	}
@@ -67,7 +64,7 @@ public class Main implements Runnable, CortanaPipe.CortanaPipeListener {
 	public void start(String host, String port, String user, String pass, String nick, String[] scripts) {
 		/* rock 'n' roll with this big bad puff o stuff */
 		try {
-			Object conns[] = setupConnections(host, port, user, pass, nick);
+			Object[] conns = setupConnections(host, port, user, pass, nick);
 			//new MsgRpcImpl(user, pass, host, Integer.parseInt(port), true, false);
 			engine = new Cortana((RpcConnection)conns[0], (RpcConnection)conns[1], scripts, (String)conns[2], Integer.parseInt(conns[3] + ""));
 			new Thread(this).start();
@@ -85,7 +82,7 @@ public class Main implements Runnable, CortanaPipe.CortanaPipeListener {
 		System.out.println(text);
 	}
 
-	public static void main(String args[]) {
+	public static void main(String[] args) {
 		msf.MeterpreterSession.DEFAULT_WAIT = 20000L;
 
 		if (args.length >= 1) {
@@ -93,7 +90,7 @@ public class Main implements Runnable, CortanaPipe.CortanaPipeListener {
 				/* load our properties file */
 				Properties temp = new Properties();
 				temp.load(new FileInputStream(args[0]));
-				String argz[] = new String[5];
+				String[] argz = new String[5];
 				argz[0] = temp.getProperty("host");
 				argz[1] = temp.getProperty("port");
 				argz[2] = temp.getProperty("user");
@@ -101,10 +98,8 @@ public class Main implements Runnable, CortanaPipe.CortanaPipeListener {
 				argz[4] = temp.getProperty("nick");
 
 				/* ok, now get our scripts from this mess too */
-				String scripts[] = new String[args.length - 1];
-				for (int x = 1; x < args.length; x++) {
-					scripts[x - 1] = args[x];
-				}
+				String[] scripts = new String[args.length - 1];
+				System.arraycopy(args, 1, scripts, 0, args.length - 1);
 
 				Main cortanaEngine = new Main();
 				cortanaEngine.start(argz[0], argz[1], argz[2], argz[3], argz[4], scripts);

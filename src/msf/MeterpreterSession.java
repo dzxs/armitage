@@ -1,8 +1,8 @@
 package msf;
 
-import java.util.*;
-import java.awt.*;
-import java.awt.event.*;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Map;
 
 /* Implements a class for writing commands to meterpreter and firing an
    event when the command is successfully executed (with its output) */
@@ -22,9 +22,9 @@ public class MeterpreterSession implements Runnable {
 		public long	start = System.currentTimeMillis();
 	}
 
-	public static interface MeterpreterCallback {
-		public void commandComplete(String session, Object token, Map response);
-		public void commandTimeout(String session, Object token, Map response);
+	public interface MeterpreterCallback {
+		void commandComplete(String session, Object token, Map response);
+		void commandTimeout(String session, Object token, Map response);
 	}
 
 	public void addListener(MeterpreterCallback l) {
@@ -307,7 +307,7 @@ public class MeterpreterSession implements Runnable {
 		/* our first read gets the default wait period at least... */
 		long start = System.currentTimeMillis() + DEFAULT_WAIT;
 
-		StringBuffer buffer = new StringBuffer();
+		StringBuilder buffer = new StringBuilder();
 		Map read = null;
 
 		/* keep reading until we see nothing (up to the timeout) */
@@ -340,7 +340,7 @@ public class MeterpreterSession implements Runnable {
 		try {
 			Thread.sleep(10);
 		}
-		catch (Exception ex) {}
+		catch (Exception ignored) {}
 		return (Map)(connection.execute("session.meterpreter_read", new Object[] { session }));
 	}
 }

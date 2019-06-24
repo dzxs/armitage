@@ -1,11 +1,10 @@
 package msf;
 
-import java.util.*;
-import java.sql.*;
+import graph.Route;
 
 import java.io.*;
-
-import graph.Route;
+import java.sql.*;
+import java.util.*;
 
 /* implement the old MSF RPC database calls in a way Armitage likes */
 public class DatabaseImpl implements RpcConnection  {
@@ -50,7 +49,7 @@ public class DatabaseImpl implements RpcConnection  {
 	}
 
 	private static String join(List items, String delim) {
-		StringBuffer result = new StringBuffer();
+		StringBuilder result = new StringBuilder();
 		Iterator i = items.iterator();
 		while (i.hasNext()) {
 			result.append(i.next());
@@ -64,9 +63,8 @@ public class DatabaseImpl implements RpcConnection  {
 	public void setWorkspace(String name) {
 		try {
 			List spaces = executeQuery("SELECT DISTINCT * FROM workspaces");
-			Iterator i = spaces.iterator();
-			while (i.hasNext()) {
-				Map temp = (Map)i.next();
+			for (Object space : spaces) {
+				Map temp = (Map) space;
 				if (name.equals(temp.get("name"))) {
 					workspaceid = temp.get("id") + "";
 					queries = build();
@@ -96,7 +94,7 @@ public class DatabaseImpl implements RpcConnection  {
 	/* marshall the type into something we'd rather deal with */
 	protected Object fixResult(Object o) {
 		if (o instanceof java.sql.Timestamp) {
-			return new Long( ((Timestamp)o).getTime() + tzfix );
+			return ((Timestamp) o).getTime() + tzfix;
 		}
 		else if (o instanceof org.postgresql.util.PGobject) {
 			return o.toString();
@@ -132,8 +130,8 @@ public class DatabaseImpl implements RpcConnection  {
 	}
 
 	private boolean checkRoute(String address) {
-		for (int x = 0; x < rFilter.length; x++) {
-			if (rFilter[x].shouldRoute(address))
+		for (Route route : rFilter) {
+			if (route.shouldRoute(address))
 				return true;
 		}
 		return false;
@@ -145,8 +143,8 @@ public class DatabaseImpl implements RpcConnection  {
 
 		String label_l = (labels.get(host) + "").toLowerCase();
 
-		for (int x = 0; x < lFilter.length; x++) {
-			if (label_l.indexOf(lFilter[x]) != -1) {
+		for (String s : lFilter) {
+			if (label_l.contains(s)) {
 				return true;
 			}
 		}
@@ -156,8 +154,8 @@ public class DatabaseImpl implements RpcConnection  {
 	private boolean checkOS(String os) {
 		String os_l = os.toLowerCase();
 
-		for (int x = 0; x < oFilter.length; x++) {
-			if (os_l.indexOf(oFilter[x]) != -1)
+		for (String s : oFilter) {
+			if (os_l.contains(s))
 				return true;
 		}
 		return false;
@@ -193,13 +191,11 @@ public class DatabaseImpl implements RpcConnection  {
 
 	protected void mergeLabels(Map l) {
 		/* accept any label values and merge them into our global data set */
-		Iterator i = l.entrySet().iterator();
-		while (i.hasNext()) {
-			Map.Entry entry = (Map.Entry)i.next();
+		for (Object o : l.entrySet()) {
+			Map.Entry entry = (Map.Entry) o;
 			if ("".equals(entry.getValue())) {
 				labels.remove(entry.getKey() + "");
-			}
-			else {
+			} else {
 				labels.put(entry.getKey() + "", entry.getValue() + "");
 			}
 		}
@@ -210,14 +206,12 @@ public class DatabaseImpl implements RpcConnection  {
 		if (labels.size() == 0)
 			return rows;
 
-		Iterator i = rows.iterator();
-		while (i.hasNext()) {
-			Map entry = (Map)i.next();
+		for (Object row : rows) {
+			Map entry = (Map) row;
 			String address = (entry.containsKey("address") ? entry.get("address") : entry.get("host")) + "";
 			if (labels.containsKey(address)) {
 				entry.put("label", labels.get(address) + "");
-			}
-			else {
+			} else {
 				entry.put("label", "");
 			}
 		}
@@ -322,10 +316,10 @@ public class DatabaseImpl implements RpcConnection  {
 		if (hFilter != null) {
 			List tables = new LinkedList();
 			tables.add("hosts");
-			if (hFilter.indexOf("services.") >= 0)
+			if (hFilter.contains("services."))
 				tables.add("services");
 
-			if (hFilter.indexOf("sessions.") >= 0)
+			if (hFilter.contains("sessions."))
 				tables.add("sessions");
 
 			temp.put("db.hosts", "SELECT DISTINCT hosts.id, hosts.updated_at, hosts.state, hosts.mac, hosts.purpose, hosts.os_flavor, hosts.os_name, hosts.address, hosts.os_sp, hosts.name FROM " + join(tables, ", ") + " WHERE hosts.workspace_id = " + workspaceid + " AND " + hFilter + " ORDER BY hosts.id ASC LIMIT " + limit1 + " OFFSET " + (limit1 * hindex));
@@ -495,7 +489,7 @@ public class DatabaseImpl implements RpcConnection  {
 						maxhosts = Integer.parseInt(values.get("size") + "");
 						maxservices = maxhosts * 24;
 					}
-					catch (Exception ex) {
+					catch (Exception ignored) {
 					}
 				}
 
@@ -517,12 +511,12 @@ public class DatabaseImpl implements RpcConnection  {
 					List ports = new LinkedList();
 					List ports2 = new LinkedList();
 					String[] p = (values.get("ports") + "").split(",\\s*");
-					for (int x = 0; x < p.length; x++) {
-						if (!p[x].matches("[0-9]+")) {
+					for (String s : p) {
+						if (!s.matches("[0-9]+")) {
 							return new HashMap();
 						}
 
-						ports.add("services.port = " + p[x]);
+						ports.add("services.port = " + s);
 						//ports2.add("s.port = " + p[x]);
 					}
 					hosts.add("services.host_id = hosts.id");
@@ -557,7 +551,7 @@ public class DatabaseImpl implements RpcConnection  {
 				stmt.setString(2, values.get("pass") + "");
 
 				Map result = new HashMap();
-				result.put("rows", new Integer(stmt.executeUpdate()));
+				result.put("rows", stmt.executeUpdate());
 				return result;
 			}
 			else if (methodName.equals("db.report_labels")) {

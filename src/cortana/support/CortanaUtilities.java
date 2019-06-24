@@ -1,15 +1,21 @@
 package cortana.support;
 
-import java.io.*;
+import cortana.core.EventManager;
+import cortana.metasploit.MetasploitBridge;
+import sleep.bridges.BridgeUtilities;
+import sleep.bridges.KeyValuePair;
+import sleep.bridges.SleepClosure;
+import sleep.bridges.io.IOObject;
+import sleep.interfaces.Function;
+import sleep.interfaces.Loadable;
+import sleep.runtime.Scalar;
+import sleep.runtime.ScriptInstance;
+import sleep.runtime.ScriptVariables;
+import sleep.runtime.SleepUtils;
+
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 import java.util.*;
-
-import cortana.core.*;
-import cortana.metasploit.*;
-
-import sleep.runtime.*;
-import sleep.interfaces.*;
-import sleep.bridges.*;
-import sleep.bridges.io.*;
 
 /** Utilities that don't fit anywhere else... still useful stuff I assume */
 public class CortanaUtilities implements Function, Loadable {
@@ -46,131 +52,128 @@ public class CortanaUtilities implements Function, Loadable {
 	}
 
 	public Scalar evaluate(String name, ScriptInstance script, Stack args) {
-		if (name.equals("&fork")) {
+		switch (name) {
+			case "&fork": {
 			/* this function taken from sleep.bridges.BasicIO. I'm reimplementing it to automatically
 			   pass through a few global variables that Cortana relies on */
 
-			SleepClosure   param = BridgeUtilities.getFunction(args, script);
+				SleepClosure param = BridgeUtilities.getFunction(args, script);
 
-			// create our fork...
-			ScriptInstance child = script.fork();
-			child.installBlock(param.getRunnableCode());
+				// create our fork...
+				ScriptInstance child = script.fork();
+				child.installBlock(param.getRunnableCode());
 
-			ScriptVariables vars = child.getScriptVariables();
+				ScriptVariables vars = child.getScriptVariables();
 
-			while (!args.isEmpty()) {
-				KeyValuePair kvp = BridgeUtilities.getKeyValuePair(args);
-				vars.putScalar(kvp.getKey().toString(), SleepUtils.getScalar(kvp.getValue()));
+				while (!args.isEmpty()) {
+					KeyValuePair kvp = BridgeUtilities.getKeyValuePair(args);
+					vars.putScalar(kvp.getKey().toString(), SleepUtils.getScalar(kvp.getValue()));
+				}
+
+				// install our necessary global variables
+				installVars(vars, script);
+
+				// create a pipe between these two items...
+				IOObject parent_io = new IOObject();
+				IOObject child_io = new IOObject();
+
+				try {
+					PipedInputStream parent_in = new PipedInputStream();
+					PipedOutputStream parent_out = new PipedOutputStream();
+					parent_in.connect(parent_out);
+
+					PipedInputStream child_in = new PipedInputStream();
+					PipedOutputStream child_out = new PipedOutputStream();
+					child_in.connect(child_out);
+
+					parent_io.openRead(child_in);
+					parent_io.openWrite(parent_out);
+
+					child_io.openRead(parent_in);
+					child_io.openWrite(child_out);
+
+					child.getScriptVariables().putScalar("$source", SleepUtils.getScalar(child_io));
+
+					Thread temp = new Thread(child, "fork of " + child.getRunnableBlock().getSourceLocation());
+
+					parent_io.setThread(temp);
+					child_io.setThread(temp);
+
+					child.setParent(parent_io);
+
+					temp.start();
+				} catch (Exception ex) {
+					script.getScriptEnvironment().flagError(ex);
+				}
+
+				return SleepUtils.getScalar(parent_io);
 			}
+			case "&spawn": {
+				SleepClosure param = BridgeUtilities.getFunction(args, script);
 
-			// install our necessary global variables
-			installVars(vars, script);
+				/* fortunately, Sleep has some nice stuff to make forking convienent */
+				ScriptInstance child = script.fork();
+				child.installBlock(param.getRunnableCode());
 
-			// create a pipe between these two items...
-			IOObject parent_io = new IOObject();
-			IOObject child_io  = new IOObject();
+				/* prevent a bad day, reinit metadata in new script as a copy of metadata in old */
+				Map meta = Collections.synchronizedMap(new HashMap(script.getMetadata()));
+				child.getScriptVariables().getGlobalVariables().putScalar("__meta__", SleepUtils.getScalar((Object) meta));
 
-			try {
-				PipedInputStream  parent_in  = new PipedInputStream();
-				PipedOutputStream parent_out = new PipedOutputStream();
-				parent_in.connect(parent_out);
+				/* give our new script instance its own id, so local events trigger here only */
+				child.getMetadata().put("%scriptid%", child.hashCode() ^ (System.currentTimeMillis() * 13));
 
-				PipedInputStream  child_in   = new PipedInputStream();
-				PipedOutputStream child_out  = new PipedOutputStream();
-				child_in.connect(child_out);
+				/* install any variables the user specified */
+				ScriptVariables vars = child.getScriptVariables();
 
-				parent_io.openRead(child_in);
-				parent_io.openWrite(parent_out);
+				while (!args.isEmpty()) {
+					KeyValuePair kvp = BridgeUtilities.getKeyValuePair(args);
+					vars.putScalar(kvp.getKey().toString(), SleepUtils.getScalar(kvp.getValue()));
+				}
 
-				child_io.openRead(parent_in);
-				child_io.openWrite(child_out);
+				/* install some key values... */
+				installVars(vars, script);
 
-				child.getScriptVariables().putScalar("$source", SleepUtils.getScalar(child_io));
+				/* increment the number of installed scripts by 1 */
+				synchronized (metasploit) {
+					metasploit.loadedScripts += 1;
+				}
 
-				Thread temp = new Thread(child, "fork of " + child.getRunnableBlock().getSourceLocation());
-
-				parent_io.setThread(temp);
-				child_io.setThread(temp);
-
-				child.setParent(parent_io);
-
-				temp.start();
+				/* run the script... this will block as &isolate is not a &fork */
+				return child.runScript();
 			}
-			catch (Exception ex) {
-				script.getScriptEnvironment().flagError(ex);
+			case "&dispatch_event": {
+				final SleepClosure param = BridgeUtilities.getFunction(args, script);
+				final Stack argz = EventManager.shallowCopy(args);
+
+				if (javax.swing.SwingUtilities.isEventDispatchThread()) {
+					SleepUtils.runCode(param, "&dispatch_event", null, argz);
+				} else {
+					javax.swing.SwingUtilities.invokeLater(() -> SleepUtils.runCode(param, "&dispatch_event", null, argz));
+				}
+				break;
 			}
+			case "&apply": {
+				String temp = BridgeUtilities.getString(args, "");
 
-			return SleepUtils.getScalar(parent_io);
-		}
-		else if (name.equals("&spawn")) {
-			SleepClosure param = BridgeUtilities.getFunction(args, script);
+				if (temp.length() == 0 || temp.charAt(0) != '&')
+					throw new IllegalArgumentException(name + ": requested function name must begin with '&'");
 
-			/* fortunately, Sleep has some nice stuff to make forking convienent */
-			ScriptInstance child = script.fork();
-			child.installBlock(param.getRunnableCode());
+				Function f = script.getScriptEnvironment().getFunction(temp);
 
-			/* prevent a bad day, reinit metadata in new script as a copy of metadata in old */
-			Map meta = Collections.synchronizedMap(new HashMap(script.getMetadata()));
-			child.getScriptVariables().getGlobalVariables().putScalar("__meta__", SleepUtils.getScalar((Object)meta));
+				if (f == null)
+					throw new RuntimeException("Function '" + temp + "' does not exist");
 
-			/* give our new script instance its own id, so local events trigger here only */
-			child.getMetadata().put("%scriptid%", child.hashCode() ^ (System.currentTimeMillis() * 13));
+				/* build our arguments from our first argument */
+				Stack argz = new Stack();
 
-			/* install any variables the user specified */
-			ScriptVariables vars = child.getScriptVariables();
+				Iterator i = BridgeUtilities.getIterator(args, script);
+				while (i.hasNext()) {
+					argz.add(0, i.next());
+				}
 
-			while (!args.isEmpty()) {
-				KeyValuePair kvp = BridgeUtilities.getKeyValuePair(args);
-				vars.putScalar(kvp.getKey().toString(), SleepUtils.getScalar(kvp.getValue()));
+				/* run the function and return the result */
+				return SleepUtils.runCode(f, temp, script, argz);
 			}
-
-			/* install some key values... */
-			installVars(vars, script);
-
-			/* increment the number of installed scripts by 1 */
-			synchronized (metasploit) {
-				metasploit.loadedScripts += 1;
-			}
-
-			/* run the script... this will block as &isolate is not a &fork */
-			return child.runScript();
-		}
-		else if (name.equals("&dispatch_event")) {
-			final SleepClosure param = BridgeUtilities.getFunction(args, script);
-			final Stack argz = EventManager.shallowCopy(args);
-
-			if (javax.swing.SwingUtilities.isEventDispatchThread()) {
-				SleepUtils.runCode(param, "&dispatch_event", null, argz);
-			}
-			else {
-				javax.swing.SwingUtilities.invokeLater(new Runnable() {
-					public void run() {
-						SleepUtils.runCode(param, "&dispatch_event", null, argz);
-					}
-				});
-			}
-		}
-		else if (name.equals("&apply")) {
-			String temp = BridgeUtilities.getString(args, "");
-
-			if (temp.length() == 0 || temp.charAt(0) != '&')
-				throw new IllegalArgumentException(name + ": requested function name must begin with '&'");
-
-			Function f = script.getScriptEnvironment().getFunction(temp);
-
-			if (f == null)
-				throw new RuntimeException("Function '" + temp + "' does not exist");
-
-			/* build our arguments from our first argument */
-			Stack argz = new Stack();
-
-			Iterator i = BridgeUtilities.getIterator(args, script);
-			while (i.hasNext()) {
-				argz.add(0, i.next());
-			}
-
-			/* run the function and return the result */
-			return SleepUtils.runCode(f, temp, script, argz);
 		}
 		return SleepUtils.getEmptyScalar();
 	}

@@ -1,10 +1,14 @@
 package cortana.core;
 
+import sleep.bridges.SleepClosure;
+import sleep.engine.ObjectUtilities;
+import sleep.interfaces.Loadable;
+import sleep.runtime.Scalar;
+import sleep.runtime.ScalarArray;
+import sleep.runtime.ScriptInstance;
+import sleep.runtime.SleepUtils;
+
 import java.util.*;
-import sleep.runtime.*;
-import sleep.bridges.*;
-import sleep.engine.*;
-import sleep.interfaces.*;
 
 public class FilterManager {
 	protected Map filters;
@@ -47,21 +51,19 @@ public class FilterManager {
 	public static Scalar convertAll(Object data) {
 		if (data instanceof Collection) {
 			Scalar temp = SleepUtils.getArrayScalar();
-			Iterator i = ((Collection)data).iterator();
-			while (i.hasNext()) {
-				temp.getArray().push(convertAll(i.next()));
-			}
+            for (Object o : ((Collection) data)) {
+                temp.getArray().push(convertAll(o));
+            }
 			return temp;
 		}
 		else if (data instanceof Map) {
 			Scalar temp = SleepUtils.getHashScalar();
-			Iterator i = ((Map)data).entrySet().iterator();
-			while (i.hasNext()) {
-				Map.Entry entry = (Map.Entry)i.next();
-				Scalar key   = SleepUtils.getScalar(entry.getKey() + "");
-				Scalar value = temp.getHash().getAt(key);
-				value.setValue(convertAll(entry.getValue()));
-			}
+            for (Object o : ((Map) data).entrySet()) {
+                Map.Entry entry = (Map.Entry) o;
+                Scalar key = SleepUtils.getScalar(entry.getKey() + "");
+                Scalar value = temp.getHash().getAt(key);
+                value.setValue(convertAll(entry.getValue()));
+            }
 			return temp;
 		}
 		else {
@@ -118,7 +120,7 @@ public class FilterManager {
 
 		Stack res = filterScalarData(eventName, args);
 
-		Object rv[] = new Object[res.size()];
+		Object[] rv = new Object[res.size()];
 		//System.err.println("Filter: " + eventName);
 		for (int x = 0; x < rv.length; x++) {
 			rv[x] = ObjectUtilities.buildArgument(Object.class, (Scalar)res.pop(), null);

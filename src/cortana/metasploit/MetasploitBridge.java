@@ -1,18 +1,25 @@
 package cortana.metasploit;
 
-import cortana.core.*;
-import cortana.Safety;
-import msf.*;
 import armitage.ConsoleQueue;
-
-import sleep.bridges.*;
-import sleep.interfaces.*;
-import sleep.runtime.*;
-import sleep.engine.*;
-
-import java.util.*;
+import cortana.Safety;
+import cortana.core.EventManager;
+import cortana.core.FilterManager;
+import msf.Async;
+import msf.RpcConnection;
+import sleep.bridges.BridgeUtilities;
+import sleep.engine.ObjectUtilities;
+import sleep.interfaces.Function;
+import sleep.interfaces.Loadable;
+import sleep.interfaces.Predicate;
+import sleep.runtime.Scalar;
+import sleep.runtime.ScriptInstance;
+import sleep.runtime.SleepUtils;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Stack;
 
 public class MetasploitBridge implements Loadable, Function, Predicate {
 	protected EventManager  events;
@@ -75,7 +82,7 @@ public class MetasploitBridge implements Loadable, Function, Predicate {
 
 				/* safety features */
 				if (Safety.shouldAsk(script)) {
-					StringBuffer description = new StringBuffer();
+					StringBuilder description = new StringBuilder();
 					description.append("<html><body><b>");
 					description.append(new java.io.File(script.getName()).getName());
 					description.append("</b> wants to call <b>");

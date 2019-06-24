@@ -1,7 +1,7 @@
 package msf;
 
-import java.util.*;
 import java.io.IOException;
+import java.util.*;
 
 /* Pool Metasploit console ids and make them available for reuse. Why? Two reasons. One,
    Metasploit 4.3-release has a nice race condition where every console.create call is
@@ -18,18 +18,19 @@ public class ConsolePool implements RpcConnection {
 	}
 
         public Object execute(String methodName, Object[] params) throws IOException {
-		if (methodName.equals("console.allocate")) {
-			return allocate();
-		}
-		else if (methodName.equals("console.release")) {
-			release((String)params[0]);
-		}
-		else if (methodName.equals("console.release_and_destroy")) {
-			synchronized (this) {
-				tracked.remove((String)params[0]);
+			switch (methodName) {
+				case "console.allocate":
+					return allocate();
+				case "console.release":
+					release((String) params[0]);
+					break;
+				case "console.release_and_destroy":
+					synchronized (this) {
+						tracked.remove((String) params[0]);
+					}
+					release((String) params[0]);
+					break;
 			}
-			release((String)params[0]);
-		}
 		return new HashMap();
 	}
 

@@ -1,10 +1,8 @@
 package ui;
 
-import java.awt.*;
-import java.awt.event.*;
-
 import javax.swing.*;
-import javax.swing.event.*;
+import javax.swing.event.MenuEvent;
+import javax.swing.event.MenuListener;
 
 public class DynamicMenu extends JMenu implements MenuListener {
 	public DynamicMenu(String s) {
@@ -19,7 +17,7 @@ public class DynamicMenu extends JMenu implements MenuListener {
 	protected DynamicMenuHandler handler = null;
 
 	public interface DynamicMenuHandler {
-		public void setupMenu(JMenu parent);
+		void setupMenu(JMenu parent);
 	}
 
 	public void menuSelected(MenuEvent ev) {

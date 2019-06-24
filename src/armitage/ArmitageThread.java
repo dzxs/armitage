@@ -1,9 +1,5 @@
 package armitage;
 
-import console.Console;
-import msf.*;
-import java.util.*;
-
 /** A generic class to execute several queries and return their results */
 public class ArmitageThread implements Runnable {
 	protected ArmitageThreadClient client;
@@ -27,7 +23,7 @@ public class ArmitageThread implements Runnable {
 				try {
 					Thread.sleep(sleepFor);
 				}
-				catch (Exception ex) {
+				catch (Exception ignored) {
 
 				}
 			}

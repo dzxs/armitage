@@ -1,18 +1,11 @@
 package ui;
 
-import java.awt.Component;
-import java.awt.Graphics;
-import java.awt.Image;
-import java.awt.Point;
-import java.awt.Rectangle;
+import javax.swing.*;
+import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
 import java.awt.image.BufferedImage;
-
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JTabbedPane;
 
 /*
  * Adapted from: http://stackoverflow.com/questions/60269/how-to-implement-draggable-tab-using-java-swing

@@ -1,11 +1,10 @@
 package table;
 
+import javax.swing.*;
+import javax.swing.table.AbstractTableModel;
+import java.awt.*;
+import java.util.List;
 import java.util.*;
-import javax.swing.table.*;
-import javax.swing.JTable;
-import javax.swing.SwingUtilities;
-import java.awt.image.*;
-import java.awt.Image;
 
 public class GenericTableModel extends AbstractTableModel {
 	protected String[] columnNames;
@@ -62,7 +61,7 @@ public class GenericTableModel extends AbstractTableModel {
 
 	public Object[] getSelectedValues(JTable t) {
 		synchronized (this) {
-			int row[] = t.getSelectedRows();
+			int[] row = t.getSelectedRows();
 			Object[] rv = new Object[row.length];
 
 			for (int x = 0; x < row.length; x++) {
@@ -77,9 +76,9 @@ public class GenericTableModel extends AbstractTableModel {
 		}
 	}
 
-	public Object[][] getSelectedValuesFromColumns(JTable t, String cols[]) {
+	public Object[][] getSelectedValuesFromColumns(JTable t, String[] cols) {
 		synchronized (this) {
-			int row[] = t.getSelectedRows();
+			int[] row = t.getSelectedRows();
 			Object[][] rv = new Object[row.length][cols.length];
 
 			for (int x = 0; x < row.length; x++) {
@@ -172,11 +171,7 @@ public class GenericTableModel extends AbstractTableModel {
 		if (SwingUtilities.isEventDispatchThread())
 			_setValueAtRow(row, column, value);
 		else 
-			SwingUtilities.invokeLater(new Runnable() {
-				public void run() {
-					_setValueAtRow(row, column, value);
-				}
-			});
+			SwingUtilities.invokeLater(() -> _setValueAtRow(row, column, value));
 	}
 
 	public Object getSelectedValueFromColumn(JTable t, String column) {
@@ -201,33 +196,21 @@ public class GenericTableModel extends AbstractTableModel {
 		if (SwingUtilities.isEventDispatchThread())
 			_addEntry(row);
 		else 
-			SwingUtilities.invokeLater(new Runnable() {
-				public void run() {
-					_addEntry(row);
-				}
-			});
+			SwingUtilities.invokeLater(() -> _addEntry(row));
 	}
 
 	public void clear(final int newSize) {
 		if (SwingUtilities.isEventDispatchThread())
 			_clear(newSize);
 		else 
-			SwingUtilities.invokeLater(new Runnable() {
-				public void run() {
-					_clear(newSize);
-				}
-			});
+			SwingUtilities.invokeLater(() -> _clear(newSize));
 	}
 
 	public void fireListeners() {
 		if (SwingUtilities.isEventDispatchThread())
 			fireTableDataChanged();
 		else 
-			SwingUtilities.invokeLater(new Runnable() {
-				public void run() {
-					fireTableDataChanged();
-				}
-			});
+			SwingUtilities.invokeLater(this::fireTableDataChanged);
 	}
 	
 	public void _addEntry(Map row) {

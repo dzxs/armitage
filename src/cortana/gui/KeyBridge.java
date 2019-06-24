@@ -1,18 +1,18 @@
 package cortana.gui;
 
-import cortana.core.*;
-import msf.*;
-import armitage.*;
-import ui.*;
+import armitage.ArmitageApplication;
+import sleep.bridges.BridgeUtilities;
+import sleep.bridges.SleepClosure;
+import sleep.engine.Block;
+import sleep.interfaces.Environment;
+import sleep.interfaces.Function;
+import sleep.interfaces.Loadable;
+import sleep.runtime.Scalar;
+import sleep.runtime.ScriptInstance;
+import sleep.runtime.SleepUtils;
+import ui.KeyHandler;
 
-import sleep.bridges.*;
-import sleep.interfaces.*;
-import sleep.runtime.*;
-import sleep.engine.*;
-
-import java.util.*;
-
-import java.io.IOException;
+import java.util.Stack;
 
 /* an API to bind new keys in Armitage */
 public class KeyBridge implements Loadable, Function, Environment {

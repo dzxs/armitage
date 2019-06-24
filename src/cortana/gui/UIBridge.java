@@ -1,22 +1,17 @@
 package cortana.gui;
 
-import cortana.core.*;
-import msf.*;
-import armitage.*;
-import ui.*;
+import armitage.ArmitageApplication;
+import cortana.core.EventManager;
+import sleep.bridges.BridgeUtilities;
+import sleep.bridges.SleepClosure;
+import sleep.interfaces.Function;
+import sleep.interfaces.Loadable;
+import sleep.runtime.Scalar;
+import sleep.runtime.ScriptInstance;
+import sleep.runtime.SleepUtils;
 
-import sleep.bridges.*;
-import sleep.interfaces.*;
-import sleep.runtime.*;
-import sleep.engine.*;
-
-import java.awt.*;
-import java.awt.event.*;
 import javax.swing.*;
-
-import java.util.*;
-
-import java.io.IOException;
+import java.util.Stack;
 
 /* some methods to help out with user interface stuff */
 public class UIBridge implements Loadable, Function {
@@ -34,11 +29,7 @@ public class UIBridge implements Loadable, Function {
 				SleepUtils.runCode(f, "laterz", null, argz);
 			}
 			else {
-				SwingUtilities.invokeLater(new Runnable() {
-					public void run() {
-						SleepUtils.runCode(f, "laterz", null, argz);
-					}
-				});
+				SwingUtilities.invokeLater(() -> SleepUtils.runCode(f, "laterz", null, argz));
 			}
 		}
 

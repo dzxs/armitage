@@ -1,11 +1,16 @@
 package cortana.core;
 
-import java.util.*;
+import sleep.bridges.BridgeUtilities;
+import sleep.bridges.SleepClosure;
+import sleep.engine.Block;
+import sleep.interfaces.Environment;
+import sleep.interfaces.Function;
+import sleep.interfaces.Loadable;
+import sleep.runtime.Scalar;
+import sleep.runtime.ScriptInstance;
+import sleep.runtime.SleepUtils;
 
-import sleep.runtime.*;
-import sleep.interfaces.*;
-import sleep.engine.*;
-import sleep.bridges.*;
+import java.util.*;
 
 public class Commands implements Function, Environment, Loadable {
 	protected CommandManager manager;
@@ -30,13 +35,13 @@ public class Commands implements Function, Environment, Loadable {
 	public Scalar evaluate(String name, ScriptInstance script, Stack args) {
 		String command = BridgeUtilities.getString(args, "");
 		if (name.equals("&fire_command")) {
-			StringBuffer arstring = new StringBuffer();
+			StringBuilder arstring = new StringBuilder();
 			LinkedList l = new LinkedList(args);
 			l.add(command);
 			Collections.reverse(l);
 			Iterator i = l.iterator();
 			while (i.hasNext()) {
-				arstring.append(i.next() + "");
+				arstring.append(i.next());
 				if (i.hasNext())
 					arstring.append(" ");
 			}

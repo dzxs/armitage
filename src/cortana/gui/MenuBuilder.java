@@ -1,23 +1,14 @@
 package cortana.gui;
 
-import cortana.core.*;
-import msf.*;
-import armitage.*;
-import ui.*;
+import armitage.ArmitageApplication;
+import sleep.bridges.SleepClosure;
+import sleep.interfaces.Loadable;
+import sleep.runtime.SleepUtils;
 
-import sleep.bridges.*;
-import sleep.interfaces.*;
-import sleep.runtime.*;
-import sleep.engine.*;
-
-import java.util.*;
-
-import java.awt.*;
-import java.awt.event.*;
 import javax.swing.*;
-import javax.swing.event.*;
-
-import java.io.IOException;
+import java.awt.event.MouseEvent;
+import java.util.Iterator;
+import java.util.Stack;
 
 /* an API to bind new menus in Armitage */
 public class MenuBuilder {

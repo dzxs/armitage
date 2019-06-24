@@ -1,23 +1,36 @@
 package cortana;
 
-import msf.*;
-import cortana.core.*;
-import cortana.data.*;
+import armitage.ArmitageApplication;
+import armitage.ConsoleClient;
+import cortana.core.CommandManager;
+import cortana.core.EventManager;
+import cortana.core.FilterManager;
+import cortana.data.DataManager;
+import cortana.gui.KeyBridge;
+import cortana.gui.MenuBuilder;
+import cortana.gui.UIBridge;
 import cortana.metasploit.*;
-import cortana.support.*;
-import cortana.gui.*;
-
-import java.util.*;
-import sleep.runtime.*;
-import sleep.interfaces.*;
-import sleep.error.*;
-import sleep.bridges.io.*;
+import cortana.support.CortanaUtilities;
+import cortana.support.LockBridge;
+import cortana.support.Shared;
+import msf.MeterpreterSession;
+import msf.RpcConnection;
 import sleep.bridges.BridgeUtilities;
-import java.io.*;
+import sleep.bridges.io.IOObject;
+import sleep.error.RuntimeWarningWatcher;
+import sleep.error.ScriptWarning;
+import sleep.error.YourCodeSucksException;
+import sleep.interfaces.Function;
+import sleep.interfaces.Loadable;
+import sleep.runtime.Scalar;
+import sleep.runtime.ScriptInstance;
+import sleep.runtime.SleepUtils;
 
-import java.text.*;
-
-import armitage.*;
+import java.io.File;
+import java.io.IOException;
+import java.text.FieldPosition;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 public class Cortana implements Loadable, RuntimeWarningWatcher, Function {
 	/** log all module launches and post-exploitation interaction */
@@ -209,14 +222,13 @@ public class Cortana implements Loadable, RuntimeWarningWatcher, Function {
 	}
 
 	public String findScript(String script) {
-		Iterator i = scripts.keySet().iterator();
-		while (i.hasNext()) {
-			String name = i.next().toString();
-			File s = new File(name);
-			if (script.equals(s.getName())) {
-				return name;
-			}
-		}
+        for (Object o : scripts.keySet()) {
+            String name = o.toString();
+            File s = new File(name);
+            if (script.equals(s.getName())) {
+                return name;
+            }
+        }
 		return null;
 	}
 
@@ -236,10 +248,9 @@ public class Cortana implements Loadable, RuntimeWarningWatcher, Function {
 		    "troff".equals(data[0])) {
 			/* construct list of potential reload commands */
 			List res = new LinkedList();
-			Iterator i = scripts.keySet().iterator();
-			while (i.hasNext()) {
-				res.add(data[0] + " " + new File(i.next() + "").getName());
-			}
+            for (Object o : scripts.keySet()) {
+                res.add(data[0] + " " + new File(o + "").getName());
+            }
 
 			/* filter this list */
 			filterList(res, filter);
@@ -261,7 +272,7 @@ public class Cortana implements Loadable, RuntimeWarningWatcher, Function {
 				return res;
 			}
 
-			File s[] = temp.listFiles();
+            File[] s = temp.listFiles();
 			for (int x = 0; s != null && x < s.length; x++) {
 				if (s[x].isDirectory() || s[x].getName().endsWith(".cna"))
 					res.add(data[0] + " " + s[x].getAbsolutePath());
@@ -309,8 +320,7 @@ public class Cortana implements Loadable, RuntimeWarningWatcher, Function {
 		states.add("askon");
 		states.add("askoff");
 
-		Set cmds = new HashSet();
-		cmds.addAll(states);
+		Set cmds = new HashSet(states);
 		cmds.add("unload");
 		cmds.add("load");
 		cmds.add("reload");
@@ -319,14 +329,13 @@ public class Cortana implements Loadable, RuntimeWarningWatcher, Function {
 			p("");
 			p("Scripts");
 			p("-------");
-			Iterator i = scripts.keySet().iterator();
-			while (i.hasNext()) {
-				String temp = (String)i.next();
-				if (temp != null) {
-					File script = new File(temp);
-					p(script.getName());
-				}
-			}
+            for (Object o : scripts.keySet()) {
+                String temp = (String) o;
+                if (temp != null) {
+                    File script = new File(temp);
+                    p(script.getName());
+                }
+            }
 			p("");
 		}
 		else if (cmds.contains(data[0]) && data.length != 2) {
@@ -425,10 +434,9 @@ public class Cortana implements Loadable, RuntimeWarningWatcher, Function {
 			p("");
 			p("Commands");
 			p("--------");
-			Iterator i = commandList("").iterator();
-			while (i.hasNext()) {
-				p(i.next() + "");
-			}
+            for (Object o : commandList("")) {
+                p(o + "");
+            }
 			p("");
 		}
 		else {
@@ -536,11 +544,9 @@ public class Cortana implements Loadable, RuntimeWarningWatcher, Function {
 
 		/* fire ready event if we're already synced. This is an important signal for
 		   cortana scripts */
-		new Thread(new Runnable() {
-			public void run() {
-				if (data.isReady()) {
-					events.fireEvent("ready", new Stack(), script);
-				}
+		new Thread(() -> {
+			if (data.isReady()) {
+				events.fireEvent("ready", new Stack(), script);
 			}
 		}).start();
 	}
@@ -548,16 +554,14 @@ public class Cortana implements Loadable, RuntimeWarningWatcher, Function {
 	public Cortana(RpcConnection client, RpcConnection dserver, String[] scripts, String lhost, int version) {
 		this(client, dserver, new EventManager(), new FilterManager(), "default", version);
 
-		for (int x = 0; x < scripts.length; x++) {
+		for (String script : scripts) {
 			try {
-				loadScript(scripts[x]);
-			}
-			catch (YourCodeSucksException yex) {
-				System.err.println("Syntax errors in: " + scripts[x]);
+				loadScript(script);
+			} catch (YourCodeSucksException yex) {
+				System.err.println("Syntax errors in: " + script);
 				yex.printErrors(System.out);
-			}
-			catch (java.io.IOException ioex) {
-				System.err.println("Could not load: " + scripts[x] + " " + ioex.getMessage());
+			} catch (IOException ioex) {
+				System.err.println("Could not load: " + script + " " + ioex.getMessage());
 				ioex.printStackTrace();
 			}
 		}

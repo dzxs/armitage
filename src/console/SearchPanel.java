@@ -1,14 +1,14 @@
 package console;
 
 import javax.swing.*;
-import javax.swing.event.*;
-import javax.swing.border.*;
-import javax.swing.text.*;
-
+import javax.swing.border.EmptyBorder;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DefaultHighlighter;
+import javax.swing.text.Highlighter;
+import javax.swing.text.JTextComponent;
 import java.awt.*;
-import java.awt.event.*;
-
-import java.util.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 /** a search panel for use with a JTextComponent */
 public class SearchPanel extends JPanel implements ActionListener {
@@ -34,7 +34,7 @@ public class SearchPanel extends JPanel implements ActionListener {
 	}
 
 	private void scrollToIndex() {
-		Highlighter.Highlight highlights[] = component.getHighlighter().getHighlights();
+        Highlighter.Highlight[] highlights = component.getHighlighter().getHighlights();
 
 		if (highlights.length == 0) {
 			if (search.getText().trim().length() > 0)
@@ -52,7 +52,7 @@ public class SearchPanel extends JPanel implements ActionListener {
 			status.setText((offset + 1) + " of " + highlights.length);
 
 			int position = highlights[offset].getStartOffset();
-			Rectangle location = component.modelToView(position);
+			Rectangle location = component.modelToView2D(position).getBounds();
 			component.scrollRectToVisible(location);
 		}
 		catch (BadLocationException ex) {
@@ -74,7 +74,7 @@ public class SearchPanel extends JPanel implements ActionListener {
 			String text = component.getText();
 
 			/* another windows work-around... */
-			if ((System.getProperty("os.name") + "").indexOf("Windows") != -1) {
+			if ((System.getProperty("os.name") + "").contains("Windows")) {
 				text = text.replaceAll("\r\n", "\n");
 			}
 

@@ -1,6 +1,9 @@
 package cortana.data;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /* A container for a host. */
 public class Host {
@@ -39,10 +42,9 @@ public class Host {
 
 	public Set serviceSet() {
 		Set rv = new HashSet();
-		Iterator i = services.keySet().iterator();
-		while (i.hasNext()) {
-			rv.add(new Service(address, i.next() + ""));
-		}
+        for (Object o : services.keySet()) {
+            rv.add(new Service(address, o + ""));
+        }
 		return rv;
 	}
 

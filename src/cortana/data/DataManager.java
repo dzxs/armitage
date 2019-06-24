@@ -1,21 +1,22 @@
 package cortana.data;
 
-import cortana.core.*;
-
-import armitage.*;
-
+import armitage.ArmitageTimerClient;
+import cortana.core.EventManager;
 import graph.Route;
-
-import sleep.bridges.*;
-import sleep.interfaces.*;
-import sleep.runtime.*;
-import sleep.engine.*;
-
-import java.util.*;
+import msf.RpcConnection;
+import sleep.bridges.BridgeUtilities;
+import sleep.interfaces.Function;
+import sleep.interfaces.Loadable;
+import sleep.interfaces.Predicate;
+import sleep.runtime.Scalar;
+import sleep.runtime.ScriptInstance;
+import sleep.runtime.SleepUtils;
 
 import java.io.IOException;
-
-import msf.*;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.Map;
+import java.util.Stack;
 
 /* Poll metasploit, process certain data structures, fire events when those data structures change, and make this data
    available (in a base way) to Sleep scripts. The rest of the Data API will build on these primitives in Sleep. */
@@ -66,21 +67,23 @@ public class DataManager implements ArmitageTimerClient, Loadable, Function, Pre
 
 	public boolean result(String command, Object[] arguments, Map results) {
 		synchronized (this) {
-			if (command.equals("session.list")) {
-				sessions.processSessions(results);
-				routes.processRoutes(results);
-			}
-			else if (command.equals("db.services")) {
-				services.processServices(results);
-			}
-			else if (command.equals("db.hosts")) {
-				hosts.processHosts(results);
-			}
-			else if (command.equals("db.creds")) {
-				creds.processCreds(results);
-			}
-			else if (command.equals("db.loots")) {
-				loots.processLoots(results);
+			switch (command) {
+				case "session.list":
+					sessions.processSessions(results);
+					routes.processRoutes(results);
+					break;
+				case "db.services":
+					services.processServices(results);
+					break;
+				case "db.hosts":
+					hosts.processHosts(results);
+					break;
+				case "db.creds":
+					creds.processCreds(results);
+					break;
+				case "db.loots":
+					loots.processLoots(results);
+					break;
 			}
 
 			if (!synced) {
@@ -103,85 +106,77 @@ public class DataManager implements ArmitageTimerClient, Loadable, Function, Pre
 
         public Scalar evaluate(String name, ScriptInstance script, Stack args) {
 		synchronized (this) {
-			if (name.equals("&sessions")) {
-				return sessions.getScalar();
-			}
-			else if (name.equals("&hosts")) {
-				return hosts.getScalar();
-			}
-			else if (name.equals("&credentials")) {
-				return creds.getScalar();
-			}
-			else if (name.equals("&loots")) {
-				return loots.getScalar();
-			}
-			else if (name.equals("&services")) {
-				return services.getScalar();
-			}
-			else if (name.equals("&db_sync")) {
-				Object[] arguments = new Object[] { new HashMap() };
+			switch (name) {
+				case "&sessions":
+					return sessions.getScalar();
+				case "&hosts":
+					return hosts.getScalar();
+				case "&credentials":
+					return creds.getScalar();
+				case "&loots":
+					return loots.getScalar();
+				case "&services":
+					return services.getScalar();
+				case "&db_sync":
+					Object[] arguments = new Object[]{new HashMap()};
 
-				new CortanaTimer(client, "db.hosts", 0L, this, false);
-				new CortanaTimer(client, "db.services", 0L, this, false);
-				new CortanaTimer(client, "db.creds", 0L, this, false);
+					new CortanaTimer(client, "db.hosts", 0L, this, false);
+					new CortanaTimer(client, "db.services", 0L, this, false);
+					new CortanaTimer(client, "db.creds", 0L, this, false);
 
-				return SleepUtils.getEmptyScalar();
-			}
-			else if (name.equals("&routes")) {
-				return routes.getScalar();
-			}
-			else if (name.equals("&db_workspace")) {
-				try {
-					Map workspace = new HashMap();
-					Object[] argz = new Object[1];
+					return SleepUtils.getEmptyScalar();
+				case "&routes":
+					return routes.getScalar();
+				case "&db_workspace":
+					try {
+						Map workspace = new HashMap();
+						Object[] argz = new Object[1];
 
-					if (args.size() >= 4) {
-						String hosts   = BridgeUtilities.getString(args, "");
-						String ports   = BridgeUtilities.getString(args, "");
-						String os      = BridgeUtilities.getString(args, "");
-						String session = BridgeUtilities.getString(args, "");
+						if (args.size() >= 4) {
+							String hosts = BridgeUtilities.getString(args, "");
+							String ports = BridgeUtilities.getString(args, "");
+							String os = BridgeUtilities.getString(args, "");
+							String session = BridgeUtilities.getString(args, "");
 
-						if (!args.isEmpty()) {
-							String size = BridgeUtilities.getString(args, "512");
-							workspace.put("size", size);
+							if (!args.isEmpty()) {
+								String size = BridgeUtilities.getString(args, "512");
+								workspace.put("size", size);
+							}
+
+							if (!hosts.equals(""))
+								workspace.put("hosts", hosts);
+
+							if (!ports.equals(""))
+								workspace.put("ports", ports);
+
+							if (!os.equals(""))
+								workspace.put("os", os);
+
+							if (!session.equals(""))
+								workspace.put("session", "1");
+
+							argz[0] = workspace;
+						} else if (args.size() == 1) {
+							argz[0] = SleepUtils.getMapFromHash((Scalar) args.pop());
+							if (!(argz[0] instanceof Map))
+								throw new IllegalArgumentException("&db_workspace requires a hash");
+						} else {
+							/* this will reset the filter */
+							argz[0] = new HashMap();
 						}
 
-						if (!hosts.equals(""))
-							workspace.put("hosts", hosts);
-
-						if (!ports.equals(""))
-							workspace.put("ports", ports);
-
-						if (!os.equals(""))
-							workspace.put("os", os);
-
-						if (!session.equals(""))
-							workspace.put("session", "1");
-
-						argz[0] = workspace;
+						client.execute("db.filter", argz);
+						reset = true;
+						synced = false;
+						hosts.reset();
+						sessions.reset();
+						routes.reset();
+						services.reset();
+						creds.reset();
+					} catch (IOException ioex) {
+						throw new RuntimeException(ioex);
 					}
-					else if (args.size() == 1) {
-						argz[0] = SleepUtils.getMapFromHash((Scalar)args.pop());
-						if (!(argz[0] instanceof Map))
-							throw new IllegalArgumentException("&db_workspace requires a hash");
-					}
-					else {
-						/* this will reset the filter */
-						argz[0] = new HashMap();
-					}
-
-					client.execute("db.filter", argz);
-					reset = true;
-					synced = false;
-					hosts.reset();
-					sessions.reset();
-					routes.reset();
-					services.reset();
-					creds.reset();
-				}
-				catch (IOException ioex) {
-					throw new RuntimeException(ioex);
-				}
+					break;
 			}
 		}
                 return SleepUtils.getEmptyScalar();
@@ -189,60 +184,63 @@ public class DataManager implements ArmitageTimerClient, Loadable, Function, Pre
 
 	public boolean decide(String predicate, ScriptInstance script, Stack terms) {
 		synchronized (this) {
-			if (predicate.equals("hasservice")) {
-				String port = BridgeUtilities.getString(terms, "");
-				String addr = BridgeUtilities.getString(terms, "");
+			switch (predicate) {
+				case "hasservice": {
+					String port = BridgeUtilities.getString(terms, "");
+					String addr = BridgeUtilities.getString(terms, "");
 
-				Host host = (Host)hosts.getHosts().get(addr);
-				if (host != null) {
-					return host.hasService(port);
-				}
-			}
-			else if (predicate.equals("ispivot")) {
-				String addr  = BridgeUtilities.getString(terms, "");
-				String sid = BridgeUtilities.getString(terms, "");
-
-				Iterator i = routes.getRoutes().iterator();
-				while (i.hasNext()) {
-					Route r = (Route)i.next();
-					if (sid.equals(r.getGateway()) && r.shouldRoute(addr)) {
-						return true;
+					Host host = (Host) hosts.getHosts().get(addr);
+					if (host != null) {
+						return host.hasService(port);
 					}
+					break;
 				}
-			}
-			else if (predicate.equals("isroute")) {
-				String addr  = BridgeUtilities.getString(terms, "");
-				Route route = (Route)BridgeUtilities.getObject(terms);
+				case "ispivot": {
+					String addr = BridgeUtilities.getString(terms, "");
+					String sid = BridgeUtilities.getString(terms, "");
 
-				return route.shouldRoute(addr);
-			}
-			else if (predicate.equals("-isready")) {
-				String sid = BridgeUtilities.getString(terms, "");
-				Map session = sessions.getSession(sid);
-				if (session == null)
-					return false;
-				return !"meterpreter".equals(session.get("type")) || !"".equals(session.get("info"));
-			}
-			else if (predicate.equals("-ismeterpreter")) {
-				String sid = BridgeUtilities.getString(terms, "");
-				Map session = sessions.getSession(sid);
-				if (session == null)
-					return false;
-				return "meterpreter".equals(session.get("type"));
-			}
-			else if (predicate.equals("-isshell")) {
-				String sid = BridgeUtilities.getString(terms, "");
-				Map session = sessions.getSession(sid);
-				if (session == null)
-					return false;
-				return "shell".equals(session.get("type"));
-			}
-			else if (predicate.equals("-iswinmeterpreter")) {
-				String sid = BridgeUtilities.getString(terms, "");
-				Map session = sessions.getSession(sid);
-				if (session == null)
-					return false;
-				return "meterpreter".equals(session.get("type")) && ("x86/win32".equals(session.get("platform")) || "x86/win64".equals(session.get("platform")));
+					for (Object o : routes.getRoutes()) {
+						Route r = (Route) o;
+						if (sid.equals(r.getGateway()) && r.shouldRoute(addr)) {
+							return true;
+						}
+					}
+					break;
+				}
+				case "isroute": {
+					String addr = BridgeUtilities.getString(terms, "");
+					Route route = (Route) BridgeUtilities.getObject(terms);
+
+					return route.shouldRoute(addr);
+				}
+				case "-isready": {
+					String sid = BridgeUtilities.getString(terms, "");
+					Map session = sessions.getSession(sid);
+					if (session == null)
+						return false;
+					return !"meterpreter".equals(session.get("type")) || !"".equals(session.get("info"));
+				}
+				case "-ismeterpreter": {
+					String sid = BridgeUtilities.getString(terms, "");
+					Map session = sessions.getSession(sid);
+					if (session == null)
+						return false;
+					return "meterpreter".equals(session.get("type"));
+				}
+				case "-isshell": {
+					String sid = BridgeUtilities.getString(terms, "");
+					Map session = sessions.getSession(sid);
+					if (session == null)
+						return false;
+					return "shell".equals(session.get("type"));
+				}
+				case "-iswinmeterpreter": {
+					String sid = BridgeUtilities.getString(terms, "");
+					Map session = sessions.getSession(sid);
+					if (session == null)
+						return false;
+					return "meterpreter".equals(session.get("type")) && ("x86/win32".equals(session.get("platform")) || "x86/win64".equals(session.get("platform")));
+				}
 			}
 		}
 

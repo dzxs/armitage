@@ -1,7 +1,8 @@
 package msf;
 
-import java.io.*;
-import java.util.*;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 public class RpcAsync implements RpcConnection, Async, Runnable {
 	protected RpcQueue queue;
@@ -68,8 +69,7 @@ public class RpcAsync implements RpcConnection, Async, Runnable {
 		if (methodName.equals("module.info") || methodName.equals("module.options") || methodName.equals("module.compatible_payloads")) {
 			StringBuilder keysb = new StringBuilder(methodName);
 
-			for(int i = 0; i < params.length; i++)
-				keysb.append(params[i].toString());
+            for (Object param : params) keysb.append(param.toString());
 
 			String key = keysb.toString();
 			Object result = cache.get(key);

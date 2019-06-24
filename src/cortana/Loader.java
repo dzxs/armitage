@@ -1,14 +1,16 @@
 package cortana;
 
-import cortana.core.*;
-
+import sleep.error.RuntimeWarningWatcher;
+import sleep.error.YourCodeSucksException;
+import sleep.interfaces.Loadable;
 import sleep.runtime.*;
-import sleep.interfaces.*;
 
-import sleep.error.*;
-
-import java.io.*;
-import java.util.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.Hashtable;
+import java.util.LinkedList;
+import java.util.List;
 
 /** The Loader creates an isolated script instance for each Cortana script that we load */
 public class Loader implements Loadable {
@@ -19,27 +21,24 @@ public class Loader implements Loadable {
 	protected List		  scripts = new LinkedList();
 
 	public void unsetDebugLevel(int flag) {
-		Iterator i = scripts.iterator();
-		while (i.hasNext()) {
-			ScriptInstance script = (ScriptInstance)i.next();
+		for (Object o : scripts) {
+			ScriptInstance script = (ScriptInstance) o;
 			int flags = script.getDebugFlags() & ~flag;
 			script.setDebugFlags(flags);
 		}
 	}
 
 	public void printProfile(OutputStream out) {
-		Iterator i = scripts.iterator();
-		while (i.hasNext()) {
-			ScriptInstance script = (ScriptInstance)i.next();
+		for (Object o : scripts) {
+			ScriptInstance script = (ScriptInstance) o;
 			script.printProfileStatistics(out);
 			return;
 		}
 	}
 
 	public void setDebugLevel(int flag) {
-		Iterator i = scripts.iterator();
-		while (i.hasNext()) {
-			ScriptInstance script = (ScriptInstance)i.next();
+		for (Object o : scripts) {
+			ScriptInstance script = (ScriptInstance) o;
 			int flags = script.getDebugFlags() | flag;
 			script.setDebugFlags(flags);
 		}
@@ -93,9 +92,8 @@ public class Loader implements Loadable {
 	}
 
 	public void unload() {
-		Iterator i = scripts.iterator();
-		while (i.hasNext()) {
-			ScriptInstance temp = (ScriptInstance)i.next();
+		for (Object script : scripts) {
+			ScriptInstance temp = (ScriptInstance) script;
 			temp.setUnloaded();
 		}
 

@@ -1,20 +1,21 @@
 package cortana.metasploit;
 
-import cortana.core.*;
-import cortana.*;
-import msf.*;
-import armitage.*;
+import armitage.ConsoleQueue;
+import cortana.Safety;
+import cortana.core.EventManager;
+import cortana.core.FilterManager;
+import msf.RpcConnection;
+import sleep.bridges.BridgeUtilities;
+import sleep.bridges.SleepClosure;
+import sleep.interfaces.Function;
+import sleep.interfaces.Loadable;
+import sleep.runtime.Scalar;
+import sleep.runtime.ScriptInstance;
+import sleep.runtime.SleepUtils;
 
-import sleep.bridges.*;
-import sleep.interfaces.*;
-import sleep.runtime.*;
-import sleep.engine.*;
-
-import java.util.*;
-
-import java.io.IOException;
-
-import javax.swing.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Stack;
 
 public class ConsoleBridge implements Loadable, Function, ConsoleQueue.ConsoleCallback {
 	protected EventManager  events;
@@ -91,80 +92,87 @@ public class ConsoleBridge implements Loadable, Function, ConsoleQueue.ConsoleCa
 	}
 
 	public Scalar evaluate(String name, ScriptInstance script, Stack args) {
-		if (name.equals("&console")) {
-			ConsoleQueue session = newQueue(script);
-			session.addSessionListener(this);
-			return SleepUtils.getScalar(session);
-		}
-		else if (name.equals("&cmd_set")) {
-			ConsoleQueue session = (ConsoleQueue)BridgeUtilities.getObject(args);
-			Scalar topitem = (Scalar)args.pop();
-			session.setOptions(SleepUtils.getMapFromHash(topitem));
-		}
-		else if (name.equals("&cmd_echo")) {
-			ConsoleQueue session = (ConsoleQueue)BridgeUtilities.getObject(args);
-			session.append(BridgeUtilities.getString(args, ""));
-		}
-		else if (name.equals("&cmd_stop")) {
-			ConsoleQueue session = (ConsoleQueue)BridgeUtilities.getObject(args);
-			session.stop();
-		}
-		else {
-			/* resolve our console */
-			ConsoleQueue session = null;
-			if (name.equals("&cmd")) {
-				session = (ConsoleQueue)BridgeUtilities.getObject(args);
+		switch (name) {
+			case "&console": {
+				ConsoleQueue session = newQueue(script);
+				session.addSessionListener(this);
+				return SleepUtils.getScalar(session);
 			}
-			else if (name.equals("&cmd_async")) {
-				session = newQueue(script);
+			case "&cmd_set": {
+				ConsoleQueue session = (ConsoleQueue) BridgeUtilities.getObject(args);
+				Scalar topitem = (Scalar) args.pop();
+				session.setOptions(SleepUtils.getMapFromHash(topitem));
+				break;
 			}
-			else if (name.equals("&cmd_safe")) {
-				session = getQueue(script);
+			case "&cmd_echo": {
+				ConsoleQueue session = (ConsoleQueue) BridgeUtilities.getObject(args);
+				session.append(BridgeUtilities.getString(args, ""));
+				break;
 			}
-
-			/* build up our command data structure thing */
-			String command = BridgeUtilities.getString(args, "");
-
-			ConsoleToken token = new ConsoleToken();
-			token.script = script;
-			token.command = command;
-
-			/* attach a function to the command if asked to */
-			if (args.isEmpty()) {
-				token.function = null;
-			}
-			else {
-				SleepClosure f = BridgeUtilities.getFunction(args, script);
-				token.function = f;
-			}
-
-			/* check our debug flags... */
-			if (Safety.shouldAsk(script)) {
-				StringBuffer description = new StringBuffer();
-				description.append("<html><body><b>");
-				description.append(new java.io.File(script.getName()).getName());
-				description.append("</b> wants to write to a console");
-				description.append("</b>:</html></body>\n\n<html><body><b>");
-				description.append(command);
-				description.append("</b></body></html>\n\nWould you like to allow this?");
-
-				if (!Safety.ask(script, description.toString(), "console - '" + command + "'")) {
-					return SleepUtils.getEmptyScalar();
-				}
-			}
-
-			if (Safety.shouldLog(script)) {
-				Safety.log(script, "console - '" + command + "'");
-			}
-
-			/* we made it this far, go ahead and add the command to the queue */
-			session.addCommand(token, command);
-
-			/* return the console to the pool if it's an async command */
-			if (name.equals("&cmd_async")) {
+			case "&cmd_stop": {
+				ConsoleQueue session = (ConsoleQueue) BridgeUtilities.getObject(args);
 				session.stop();
+				break;
 			}
+			default: {
+				/* resolve our console */
+				ConsoleQueue session = null;
+				switch (name) {
+					case "&cmd":
+						session = (ConsoleQueue) BridgeUtilities.getObject(args);
+						break;
+					case "&cmd_async":
+						session = newQueue(script);
+						break;
+					case "&cmd_safe":
+						session = getQueue(script);
+						break;
+				}
 
+				/* build up our command data structure thing */
+				String command = BridgeUtilities.getString(args, "");
+
+				ConsoleToken token = new ConsoleToken();
+				token.script = script;
+				token.command = command;
+
+				/* attach a function to the command if asked to */
+				if (args.isEmpty()) {
+					token.function = null;
+				} else {
+					SleepClosure f = BridgeUtilities.getFunction(args, script);
+					token.function = f;
+				}
+
+				/* check our debug flags... */
+				if (Safety.shouldAsk(script)) {
+					StringBuilder description = new StringBuilder();
+					description.append("<html><body><b>");
+					description.append(new java.io.File(script.getName()).getName());
+					description.append("</b> wants to write to a console");
+					description.append("</b>:</html></body>\n\n<html><body><b>");
+					description.append(command);
+					description.append("</b></body></html>\n\nWould you like to allow this?");
+
+					if (!Safety.ask(script, description.toString(), "console - '" + command + "'")) {
+						return SleepUtils.getEmptyScalar();
+					}
+				}
+
+				if (Safety.shouldLog(script)) {
+					Safety.log(script, "console - '" + command + "'");
+				}
+
+				/* we made it this far, go ahead and add the command to the queue */
+				session.addCommand(token, command);
+
+				/* return the console to the pool if it's an async command */
+				if (name.equals("&cmd_async")) {
+					session.stop();
+				}
+
+				break;
+			}
 		}
 		return SleepUtils.getEmptyScalar();
 	}

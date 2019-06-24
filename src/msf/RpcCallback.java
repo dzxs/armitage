@@ -1,5 +1,5 @@
 package msf;
 
 public interface RpcCallback {
-	public void result(Object result);
+	void result(Object result);
 }

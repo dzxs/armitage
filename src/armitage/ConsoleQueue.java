@@ -1,14 +1,12 @@
 package armitage;
 
-import console.*;
+import console.Console;
+import msf.RpcConnection;
 
-import java.util.*;
-import java.awt.*;
-import java.awt.event.*;
-
-import msf.*;
-import java.math.*;
-import java.security.*;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.Set;
 
 /* Implements a class for writing commands to a console and firing an event when the command is successfully executed
    (with its output). My hope is that this will replace the CommandClient class which likes to execute stuff out of order */
@@ -31,8 +29,8 @@ public class ConsoleQueue implements Runnable {
 		return display;
 	}
 
-	public static interface ConsoleCallback {
-		public void commandComplete(ConsoleQueue queue, Object token, String response);
+	public interface ConsoleCallback {
+		void commandComplete(ConsoleQueue queue, Object token, String response);
 	}
 
 	/* I'm not necessarily trying to bloat this class, but this method will let me get rid of another class */
@@ -59,18 +57,15 @@ public class ConsoleQueue implements Runnable {
 
 	public void setDisplay(final Console display) {
 		this.display = display;
-		display.getInput().addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent ev) {
-				display.getInput().setText("");
-				addCommand(null, ev.getActionCommand());
-			}
+		display.getInput().addActionListener(ev -> {
+			display.getInput().setText("");
+			addCommand(null, ev.getActionCommand());
 		});
 	}
 
 	public void fireSessionReadEvent(String text) {
-		Iterator i = listeners_all.iterator();
-		while (i.hasNext()) {
-			((ConsoleCallback)i.next()).commandComplete(this, null, text);
+		for (Object o : listeners_all) {
+			((ConsoleCallback) o).commandComplete(this, null, text);
 		}
 	}
 
@@ -78,9 +73,8 @@ public class ConsoleQueue implements Runnable {
 		if (command.token == null)
 			return;
 
-		Iterator i = listeners.iterator();
-		while (i.hasNext()) {
-			((ConsoleCallback)i.next()).commandComplete(this, command != null ? command.token : null, output);
+		for (Object listener : listeners) {
+			((ConsoleCallback) listener).commandComplete(this, command != null ? command.token : null, output);
 		}
 	}
 
@@ -107,16 +101,15 @@ public class ConsoleQueue implements Runnable {
 			Map read = readResponse();
 			String prompt = ConsoleClient.cleanText(read.get("prompt") + "");
 
-			StringBuffer writeme = new StringBuffer();
+			StringBuilder writeme = new StringBuilder();
 			Set expected = new HashSet();
 
 			/* loop through our values to assign */
-			Iterator i = c.assign.entrySet().iterator();
-			while (i.hasNext()) {
-				Map.Entry entry = (Map.Entry)i.next();
+			for (Object o : c.assign.entrySet()) {
+				Map.Entry entry = (Map.Entry) o;
 				String key = entry.getKey() + "";
 				String value = entry.getValue() + "";
-				writeme.append("set " + key + " " + value + "\n");
+				writeme.append("set ").append(key).append(" ").append(value).append("\n");
 				expected.add(key);
 			}
 
@@ -131,9 +124,9 @@ public class ConsoleQueue implements Runnable {
 				Map temp = (Map)(connection.execute("console.read", new Object[] { consoleid }));
 				if (!isEmptyData(temp.get("data") + "")) {
 					String[] lines = (temp.get("data") + "").split("\n");
-					for (int x = 0; x < lines.length; x++) {
-						if (lines[x].indexOf(" => ") != -1) {
-							String[] kv = lines[x].split(" => ");
+					for (String line : lines) {
+						if (line.contains(" => ")) {
+							String[] kv = line.split(" => ");
 
 							/* remove any set variables from our set of stuff */
 							expected.remove(kv[0]);
@@ -141,18 +134,15 @@ public class ConsoleQueue implements Runnable {
 							if (display != null) {
 								if (kv.length == 2) {
 									display.append(prompt + "set " + kv[0] + " " + kv[1] + "\n");
-								}
-								else {
+								} else {
 									display.append(prompt + "set " + kv[0] + "\n");
 								}
-								display.append(lines[x] + "\n");
+								display.append(line + "\n");
 							}
-						}
-						else if (display != null) {
-							display.append(lines[x] + "\n");
-						}
-						else {
-							armitage.ArmitageMain.print_error("Batch read unexpected: " + lines[x]);
+						} else if (display != null) {
+							display.append(line + "\n");
+						} else {
+							ArmitageMain.print_error("Batch read unexpected: " + line);
 						}
 					}
 				}
@@ -179,7 +169,7 @@ public class ConsoleQueue implements Runnable {
 				return;
 			}
 
-			StringBuffer writeme = new StringBuffer();
+			StringBuilder writeme = new StringBuilder();
 			writeme.append(c.text);
 			writeme.append("\n");
 
@@ -196,7 +186,7 @@ public class ConsoleQueue implements Runnable {
 			connection.execute("console.write", new Object[] { consoleid, writeme.toString() });
 
 			/* start collecting output */
-			StringBuffer output = new StringBuffer();
+			StringBuilder output = new StringBuilder();
 			Thread.sleep(10);
 			int count = 0;
 			long start = System.currentTimeMillis();

@@ -1,22 +1,11 @@
 package cortana.data;
 
-import cortana.core.*;
-
-import armitage.ArmitageTimerClient;
-import armitage.ArmitageTimer;
-
-import graph.Route;
-
-import sleep.bridges.*;
-import sleep.interfaces.*;
-import sleep.runtime.*;
-import sleep.engine.*;
+import cortana.core.EventManager;
+import cortana.core.FilterManager;
+import msf.RpcConnection;
+import sleep.runtime.Scalar;
 
 import java.util.*;
-
-import java.io.IOException;
-
-import msf.*;
 
 public class Loots extends ManagedData {
 	protected RpcConnection  client;
@@ -60,21 +49,18 @@ public class Loots extends ManagedData {
 		cache = null;
 
 		/* create a set of existing loots */
-		Set oldLoots = new HashSet();
-		oldLoots.addAll(loots.keySet());
+        Set oldLoots = new HashSet(loots.keySet());
 		loots.clear();
 
 		/* parse and add loots */
 
-		Iterator i = ((Collection)results.get("loots")).iterator();
-		while (i.hasNext()) {
-			Map temp = (Map)i.next();
-			loots.put(temp.get("path") + "", temp);
-		}
+        for (Object o : ((Collection) results.get("loots"))) {
+            Map temp = (Map) o;
+            loots.put(temp.get("path") + "", temp);
+        }
 
 		/* setup a set of our new loots */
-		Set currentLoots = new HashSet();
-		currentLoots.addAll(loots.keySet());
+        Set currentLoots = new HashSet(loots.keySet());
 
 		/* now... bucket our loots and fire some events */
 		Set newLoots = DataUtils.difference(currentLoots, oldLoots);

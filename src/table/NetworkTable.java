@@ -1,20 +1,22 @@
 package table;
 
-import javax.swing.*;
-import javax.swing.event.*;
-import javax.swing.border.*;
-import javax.swing.table.*;
-
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.image.*;
-
-import java.util.*;
-import ui.ATable;
-
-import graph.Route;
 import graph.GraphPopup;
 import graph.Refreshable;
+import graph.Route;
+import ui.ATable;
+
+import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableRowSorter;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.image.BufferedImage;
+import java.util.*;
 import java.util.regex.PatternSyntaxException;
 
 public class NetworkTable extends JComponent implements ActionListener, Refreshable {
@@ -67,15 +69,7 @@ public class NetworkTable extends JComponent implements ActionListener, Refresha
 				long aa = Route.ipToLong(a + "");
 				long bb = Route.ipToLong(b + "");
 
-				if (aa > bb) {
-					return 1;
-				}
-				else if (aa < bb) {
-					return -1;
-				}
-				else {
-					return 0;
-				}
+				return Long.compare(aa, bb);
 			}
 
 			public boolean equals(Object a, Object b) {
@@ -94,29 +88,27 @@ public class NetworkTable extends JComponent implements ActionListener, Refresha
 		height = table.getRowHeight();
 
 		final TableCellRenderer parent = table.getDefaultRenderer(Object.class);
-		final TableCellRenderer phear  = new TableCellRenderer() {
-			public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int col) {
-				JLabel component = (JLabel)parent.getTableCellRendererComponent(table, value, isSelected, false, row, col);
-				float  size      = component.getFont().getSize2D() * zoom;
+		final TableCellRenderer phear  = (table, value, isSelected, hasFocus, row, col) -> {
+			JLabel component = (JLabel)parent.getTableCellRendererComponent(table, value, isSelected, false, row, col);
+			float  size      = component.getFont().getSize2D() * zoom;
 
-				if (col == 4 && Boolean.TRUE.equals(model.getValueAt(table, row, "Active"))) {
-					component.setFont(component.getFont().deriveFont(Font.BOLD).deriveFont(size));
-				}
-				else if (col == 1 && !"".equals(model.getValueAt(table, row, "Description"))) {
-					component.setFont(component.getFont().deriveFont(Font.BOLD).deriveFont(size));
-				}
-				else {
-					component.setFont(component.getFont().deriveFont(Font.PLAIN).deriveFont(size));
-				}
-
-				String tip = model.getValueAt(table, row, "Tooltip") + "";
-
-				if (tip.length() > 0) {
-					component.setToolTipText(tip);
-				}
-
-				return component;
+			if (col == 4 && Boolean.TRUE.equals(model.getValueAt(table, row, "Active"))) {
+				component.setFont(component.getFont().deriveFont(Font.BOLD).deriveFont(size));
 			}
+			else if (col == 1 && !"".equals(model.getValueAt(table, row, "Description"))) {
+				component.setFont(component.getFont().deriveFont(Font.BOLD).deriveFont(size));
+			}
+			else {
+				component.setFont(component.getFont().deriveFont(Font.PLAIN).deriveFont(size));
+			}
+
+			String tip = model.getValueAt(table, row, "Tooltip") + "";
+
+			if (tip.length() > 0) {
+				component.setToolTipText(tip);
+			}
+
+			return component;
 		};
 
 		table.getColumn("Address").setCellRenderer(phear);
@@ -124,22 +116,20 @@ public class NetworkTable extends JComponent implements ActionListener, Refresha
 		table.getColumn("Description").setCellRenderer(phear);
 		table.getColumn("Pivot").setCellRenderer(phear);
 
-		table.getColumn(" ").setCellRenderer(new TableCellRenderer() {
-			public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int col) {
-				JLabel component = (JLabel)parent.getTableCellRendererComponent(table, value, isSelected, false, row, col);
+		table.getColumn(" ").setCellRenderer((table, value, isSelected, hasFocus, row, col) -> {
+			JLabel component = (JLabel)parent.getTableCellRendererComponent(table, value, isSelected, false, row, col);
 
-				Image original = (Image)model.getImageAt(table, row, "Image", zoom);
-				component.setIcon(new ImageIcon(original));
-				component.setText("");
+			Image original = (Image)model.getImageAt(table, row, "Image", zoom);
+			component.setIcon(new ImageIcon(original));
+			component.setText("");
 
-				String tip = model.getValueAt(table, row, "Tooltip") + "";
+			String tip = model.getValueAt(table, row, "Tooltip") + "";
 
-				if (tip.length() > 0) {
-					component.setToolTipText(tip);
-				}
-
-				return component;
+			if (tip.length() > 0) {
+				component.setToolTipText(tip);
 			}
+
+			return component;
 		});
 
 		table.addMouseListener(new MouseAdapter() {
@@ -214,7 +204,7 @@ public class NetworkTable extends JComponent implements ActionListener, Refresha
 	public void start() {
 	}
 
-	public void fixSelection(int rows[]) {
+	public void fixSelection(int[] rows) {
 		if (rows.length == 0)
 			return;
 
@@ -222,9 +212,9 @@ public class NetworkTable extends JComponent implements ActionListener, Refresha
 
 		int rowcount = table.getModel().getRowCount();
 
-		for (int x = 0; x < rows.length; x++) {
-			if (rows[x] < rowcount) {
-				table.getSelectionModel().addSelectionInterval(rows[x], rows[x]);
+		for (int row : rows) {
+			if (row < rowcount) {
+				table.getSelectionModel().addSelectionInterval(row, row);
 			}
 		}
 
@@ -236,18 +226,15 @@ public class NetworkTable extends JComponent implements ActionListener, Refresha
 		final int[] selected = table.getSelectedRows();
 
 		model.clear(rows.size());
-		Iterator i = rows.iterator();
-		while (i.hasNext()) {
-			model.addEntry((Map)i.next());
+		for (Object row : rows) {
+			model.addEntry((Map) row);
 		}
 		rows.clear();
 
 		if (SwingUtilities.isEventDispatchThread()) {
-			SwingUtilities.invokeLater(new Runnable() {
-				public void run() {
-					model.fireListeners();
-					fixSelection(selected);
-				}
+			SwingUtilities.invokeLater(() -> {
+				model.fireListeners();
+				fixSelection(selected);
 			});
 		}
 		else {
@@ -264,9 +251,8 @@ public class NetworkTable extends JComponent implements ActionListener, Refresha
 
 	/** highlight a route (maybe to show it's in use...) */
 	public void highlightRoute(String src, String dst) {
-		Iterator i = rows.iterator();
-		while (i.hasNext()) {
-			Map temp = (Map)i.next();
+		for (Object row : rows) {
+			Map temp = (Map) row;
 			if (temp.get("Address").equals(dst) && temp.get("Pivot").equals(src)) {
 				temp.put("Active", Boolean.TRUE);
 			}
@@ -275,11 +261,9 @@ public class NetworkTable extends JComponent implements ActionListener, Refresha
 
 	/** show the meterpreter routes . :) */
 	public void setRoutes(Route[] routes) {
-		Iterator i = rows.iterator();
-		while (i.hasNext()) {
-			Map temp = (Map)i.next();
-			for (int x = 0; x < routes.length; x++) {
-				Route r = routes[x];
+		for (Object row : rows) {
+			Map temp = (Map) row;
+			for (Route r : routes) {
 				if (r.shouldRoute(temp.get("Address") + ""))
 					temp.put("Pivot", r.getGateway());
 			}
@@ -313,7 +297,7 @@ public class NetworkTable extends JComponent implements ActionListener, Refresha
 		HashMap map = new HashMap();
 		map.put("Address", id);
 
-		if (description.indexOf(id) > -1)
+		if (description.contains(id))
 			description = description.substring(id.length());
 		map.put("Services", services);
 		map.put("Label", label);

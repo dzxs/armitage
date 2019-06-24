@@ -1,9 +1,11 @@
 package ui;
 
-import java.io.*;
-import msf.*;
+import msf.RpcConnection;
+
 import javax.swing.*;
-import java.util.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.util.Map;
 
 /* upload a file to the team server... */
 public class UploadFile implements Runnable {
@@ -15,9 +17,9 @@ public class UploadFile implements Runnable {
 	protected Thread          thread = null;
 	protected String          rfile = null;
 
-	public static interface UploadNotify {
+	public interface UploadNotify {
 		/* call with the remote path of the file */
-		public void complete(String name);
+        void complete(String name);
 	}
 
 	public UploadFile(RpcConnection client, File file, UploadNotify listener) {
@@ -37,7 +39,7 @@ public class UploadFile implements Runnable {
 		try {
 			thread.join();
 		}
-		catch (InterruptedException iex) {
+		catch (InterruptedException ignored) {
 		}
 
 		if (rfile == null)
@@ -48,9 +50,7 @@ public class UploadFile implements Runnable {
 	protected Object[] argz(byte[] data, long length) {
 		/* copy relevant bytes to a temporary byte buffer */
 		byte[] me = new byte[(int)length];
-		for (int x = 0; x < length; x++) {
-			me[x] = data[x];
-		}
+		if (length >= 0) System.arraycopy(data, 0, me, 0, (int)length);
 
 		Object[] args = new Object[2];
 		args[0] = file.getName();

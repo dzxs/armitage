@@ -1,15 +1,8 @@
 package msf;
 
-import java.io.*;
-import java.net.*;
-import java.text.*;
-import java.util.*;
-import javax.xml.*;
-import javax.xml.parsers.*;
-import javax.xml.transform.*;
-import javax.xml.transform.dom.*;
-import javax.xml.transform.stream.*;
-import org.w3c.dom.*;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 /* A self-expiring cache for RPC calls */
 public class RpcCacheImpl implements Runnable {
@@ -97,8 +90,8 @@ public class RpcCacheImpl implements Runnable {
 
 	private static String cacheKey(String method, Object[] args) {
 		Map temp = (Map)args[0];
-		StringBuffer key = new StringBuffer();
-		key.append(method + ":");
+		StringBuilder key = new StringBuilder();
+		key.append(method).append(":");
 		key.append(temp.get("hosts"));
 		key.append(";");
 		key.append(temp.get("os"));

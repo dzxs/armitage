@@ -1,18 +1,25 @@
 package armitage;
 
-import sleep.runtime.*;
-import sleep.interfaces.*;
-import sleep.console.*;
-import sleep.bridges.*;
-import sleep.error.*;
-import sleep.engine.*;
+import cortana.core.EventManager;
+import cortana.core.FilterManager;
+import sleep.bridges.BridgeUtilities;
+import sleep.engine.ObjectUtilities;
+import sleep.error.RuntimeWarningWatcher;
+import sleep.error.ScriptWarning;
+import sleep.error.YourCodeSucksException;
+import sleep.interfaces.Function;
+import sleep.interfaces.Loadable;
 import sleep.parser.ParserConfig;
+import sleep.runtime.*;
+import ui.MultiFrame;
 
-import java.util.*;
-import java.io.*;
-
-import cortana.core.*;
-import ui.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.Stack;
 
 /**
  *  This class launches Armitage and loads the scripts that are part of it.
@@ -22,57 +29,55 @@ public class ArmitageMain implements RuntimeWarningWatcher, Loadable, Function {
 		print_info(warning + "");
 	}
 
-	public static final void print_error(String message) {
+	public static void print_error(String message) {
 		System.out.println("\u001B[01;31m[-]\u001B[0m " + message);
 	}
 
-	public static final void print_good(String message) {
+	public static void print_good(String message) {
 		System.out.println("\u001B[01;32m[+]\u001B[0m " + message);
 	}
 
-	public static final void print_info(String message) {
+	public static void print_info(String message) {
 		System.out.println("\u001B[01;34m[*]\u001B[0m " + message);
 	}
 
-	public static final void print_warn(String message) {
+	public static void print_warn(String message) {
 		System.out.println("\u001B[01;33m[!]\u001B[0m " + message);
 	}
 
 	public Scalar evaluate(String name, ScriptInstance script, Stack args) {
-		if (name.equals("&_args")) {
-			ScalarArray a = BridgeUtilities.getArray(args);
-			Stack temp = new Stack();
-			Iterator i = a.scalarIterator();
-			while (i.hasNext()) {
-				temp.add(0, i.next());
-			}
+		switch (name) {
+			case "&_args":
+				ScalarArray a = BridgeUtilities.getArray(args);
+				Stack<Object> temp = new Stack<>();
+				Iterator i = a.scalarIterator();
+				while (i.hasNext()) {
+					temp.add(0, i.next());
+				}
 
-			return SleepUtils.getScalar(temp);
-		}
-		else if (name.equals("&print_error")) {
-			print_error(args.pop() + "");
-		}
-		else if (name.equals("&print_good")) {
-			print_good(args.pop() + "");
-		}
-		else if (name.equals("&print_info")) {
-			print_info(args.pop() + "");
-		}
-		else {
-			try {
-				String file = BridgeUtilities.getString(args, "");
-				if (new File(file).exists()) {
-					InputStream i = new FileInputStream(file);
-					return SleepUtils.getScalar(i);
+				return SleepUtils.getScalar(temp);
+			case "&print_error":
+				print_error(args.pop() + "");
+				break;
+			case "&print_good":
+				print_good(args.pop() + "");
+				break;
+			case "&print_info":
+				print_info(args.pop() + "");
+				break;
+			default:
+				try {
+					String file = BridgeUtilities.getString(args, "");
+					if (new File(file).exists()) {
+						InputStream ii = new FileInputStream(file);
+						return SleepUtils.getScalar(ii);
+					} else {
+						InputStream iii = this.getClass().getClassLoader().getResourceAsStream(file);
+						return SleepUtils.getScalar(iii);
+					}
+				} catch (Exception ex) {
+					throw new RuntimeException(ex.getMessage());
 				}
-				else {
-					InputStream i = this.getClass().getClassLoader().getResourceAsStream(file);
-					return SleepUtils.getScalar(i);
-				}
-			}
-			catch (Exception ex) {
-				throw new RuntimeException(ex.getMessage());
-			}
 		}
 		return SleepUtils.getEmptyScalar();
 	}
@@ -134,7 +139,7 @@ public class ArmitageMain implements RuntimeWarningWatcher, Loadable, Function {
 		ParserConfig.installEscapeConstant('o', console.Colors.cancel + "");
 
 		/* setup a function or two */
-		Hashtable environment = new Hashtable();
+		Hashtable<String, ArmitageMain> environment = new Hashtable<>();
 		environment.put("&resource", this);
 		environment.put("&_args", this);
 		environment.put("&print_error", this);
@@ -176,12 +181,12 @@ public class ArmitageMain implements RuntimeWarningWatcher, Loadable, Function {
 			yex.printErrors(System.out);
 		}
 		catch (IOException ex) {
-			System.err.println(ex);
+			//System.err.println(ex); why?
 			ex.printStackTrace();
 		}
 	}
 
-	public static void main(String args[]) {
+	public static void main(String[] args) {
 		/* check for server mode option */
 		boolean serverMode = false;
 

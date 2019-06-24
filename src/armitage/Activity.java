@@ -1,8 +1,8 @@
 package armitage;
 
-import javax.swing.JLabel;
+import javax.swing.*;
 
 public interface Activity {
-	public void registerLabel(JLabel label);
-	public void resetNotification();
+	void registerLabel(JLabel label);
+	void resetNotification();
 }

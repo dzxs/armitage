@@ -1,8 +1,12 @@
 package armitage;
 
-import console.Console;
-import msf.*;
-import java.util.*;
+import msf.Async;
+import msf.RpcConnection;
+
+import java.net.SocketException;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 /** A generic class to execute several queries and return their results */
 public class ArmitageTimer implements Runnable {
@@ -32,15 +36,13 @@ public class ArmitageTimer implements Runnable {
 			return 1L;
 		}
 		else if (v instanceof Collection) {
-			Iterator j = ((Collection)v).iterator();
-			while (j.hasNext()) {
-				r += 11 * dataIdentity(j.next());
+			for (Object o : ((Collection) v)) {
+				r += 11 * dataIdentity(o);
 			}
 		}
 		else if (v instanceof Map) {
-			Iterator i = ((Map)v).values().iterator();
-			while (i.hasNext()) {
-				r += 13 * dataIdentity(i.next());
+			for (Object o : ((Map) v).values()) {
+				r += 13 * dataIdentity(o);
 			}
 		}
 		else if (v instanceof Number) {
@@ -61,10 +63,10 @@ public class ArmitageTimer implements Runnable {
 
 	private Map readFromClient() throws java.io.IOException {
 		try {
-			Object arguments[];
+            Object[] arguments;
 			if (cacheProtocol) {
 				arguments = new Object[1];
-				arguments[0] = new Long(lastCode);
+				arguments[0] = lastCode;
 			}
 			else {
 				arguments = new Object[0];
@@ -84,15 +86,12 @@ public class ArmitageTimer implements Runnable {
 
 			return lastRead;
 		}
-		catch (java.net.SocketException sex) {
+		catch (SocketException | NullPointerException sex) {
 			/* this definitely means we were booted */
 			return null;
 		}
-		catch (NullPointerException nex) {
-			/* this means the connection is dead, let's start to respond accordingly */
-			return null;
-		}
-	}
+        /* this means the connection is dead, let's start to respond accordingly */
+    }
 
 	public void run() {
 		Map read = null;
