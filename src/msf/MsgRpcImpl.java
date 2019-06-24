@@ -174,6 +174,22 @@ public class MsgRpcImpl extends RpcConnectionImpl {
 				}
 			}
 			return ValueFactory.newMap(converted);
+		} else if (o instanceof Integer) {
+			return ValueFactory.newInteger(((Integer) o));
+		} else if (o instanceof Boolean) {
+			return ValueFactory.newBoolean(((Boolean) o));
+		} else if (o instanceof Float) {
+			return ValueFactory.newFloat(((Float) o));
+		} else if (o instanceof List) {
+			List<Object> objects = (List<Object>) o;
+			List<Value> values = new ArrayList<>();
+			for (Object unknown : objects) {
+				Value out = craftValue(unknown);
+				if (out != null){
+					values.add(out);
+				}
+			}
+			return ValueFactory.newArray(values);
 		} else  {
 			System.out.println("Fixme: Unimplemented " + o.getClass());
 			return null;
