@@ -39,12 +39,12 @@ public class NetworkGraph extends JComponent implements ActionListener, Refresha
 	}
 
 	/* keeps track of the nodes and their images */
-	protected Map nodeImages = new HashMap();
+	protected Map<String, BufferedImage> nodeImages = new HashMap<>();
 
 	private class NetworkGraphCanvas extends mxInteractiveCanvas {
 		public BufferedImage loadImage(String image) {
 			if (nodeImages.containsKey(image)) {
-				return (BufferedImage)nodeImages.get(image);
+				return nodeImages.get(image);
 			}
 
 			return super.loadImage(image);
@@ -440,7 +440,18 @@ public class NetworkGraph extends JComponent implements ActionListener, Refresha
 	protected Map tooltips = new HashMap();
 
 	public Object addNode(String id, String services, String label, String description, Image image, String tooltip) {
-		nodeImages.put(id, image);
+		if (image instanceof BufferedImage) {
+			nodeImages.put(id, ((BufferedImage) image));
+		} else {
+			BufferedImage bimage = new BufferedImage(image.getWidth(null), image.getHeight(null), BufferedImage.TYPE_INT_ARGB);
+
+			// Draw the image on to the buffered image
+			Graphics2D bGr = bimage.createGraphics();
+			bGr.drawImage(image, 0, 0, null);
+			bGr.dispose();
+			nodeImages.put(id, bimage);
+		}
+
 
 		if (label.length() > 0) {
 			if (description.length() > 0) {
