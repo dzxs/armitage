@@ -1,0 +1,12 @@
+.DS_Store
+.gradle/
+.idea/
+Doxyfile
+armitage.jar
+armitage.tgz
+armitage.zip
+bin/
+cortana.jar
+dist/mac/armitage.tgz
+dist/mac/armitage/
+docs/
